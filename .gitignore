@@ -1,0 +1,30 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# training logs and videos
+logs/
+wandb/
+runs/
+videos/
+
+# model checkpoints
+*.pt
+*.pth
+*.onnx
+*.jit
+*.ckpt
+
+# TensorBoard
+events.out.tfevents*
+
+# editor/server cache
+.vscode-server/
+.DS_Store
+
+# temp files
+tmp/
+*.tmp

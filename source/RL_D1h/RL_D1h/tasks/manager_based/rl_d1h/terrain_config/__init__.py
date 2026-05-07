@@ -1,0 +1,1 @@
+from .stair_config import ROUGH_TERRAINS_CFG
