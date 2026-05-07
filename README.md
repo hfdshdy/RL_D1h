@@ -6,7 +6,7 @@ tensorboard \
   --port 6006 \
   --reload_interval 5
 
-python scripts/co_rl/train.py   --task Isaac-Velocity-Flat-D1h-v0   --algo ppo   --headless   --enable_cameras   --num_envs 2   --video   --video_length 200   --video_interval 5000   --num_policy_stacks 2   --num_critic_stacks 2
+python scripts/co_rl/train.py   --task Isaac-Velocity-Flat-D1h-v0   --algo ppo   --headless   --enable_cameras   --num_envs 2048   --video   --video_length 200   --video_interval 5000   --num_policy_stacks 2   --num_critic_stacks 2
 
 
 # Template for Isaac Lab Projects
