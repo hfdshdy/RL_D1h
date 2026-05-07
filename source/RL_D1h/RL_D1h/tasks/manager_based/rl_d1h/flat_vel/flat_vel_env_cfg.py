@@ -63,7 +63,7 @@ class D1HRewardsCfg():
     #     func=mdp.track_ang_vel_z_link_exp_v2, weight=3.5, params={"command_name": "base_velocity", "temperature": 4.0}
     # )
 
-    termination_penalty = RewTerm(func=mdp.is_terminated, weight=-200.0)
+    termination_penalty = RewTerm(func=mdp.is_terminated, weight=-20.0)
 
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_link_l2, weight=-1.0)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_link_l2, weight=-0.05)
@@ -109,7 +109,7 @@ class D1HRewardsCfg():
     )
     calf_align_l1 = RewTerm(
         func=mdp.joint_align_l1,
-        weight=-0.2,  # default: -0.5
+        weight=-0.2,  # default: -0.5 惩罚左右同类关节角度不一致
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_calf_joint")},
     )
     leg_align_l1 = RewTerm(
@@ -117,12 +117,12 @@ class D1HRewardsCfg():
         weight=-0.1,  # default: -0.5
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_thigh_joint")},
     )
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0)
+    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0) #惩罚 projected gravity 的 xy 分量平方和
     base_height = RewTerm(
         func=mdp.base_height_adaptive_l2,
         weight=-25.0,
         params={
-            "target_height": 0.35,
+            "target_height": 0.45,
             "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
             # "sensor_cfg": SceneEntityCfg("base_height_scanner"),
         },
@@ -227,6 +227,8 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
             # ".*_calf",
             # ".*_thigh",
         ]
+        self.terminations.terrain_out_of_bounds = None
+
 
 
 
