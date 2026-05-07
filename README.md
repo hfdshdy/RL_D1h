@@ -8,6 +8,21 @@ tensorboard \
 
 python scripts/co_rl/train.py   --task Isaac-Velocity-Flat-D1h-v0   --algo ppo   --headless   --enable_cameras   --num_envs 2048   --video   --video_length 200   --video_interval 5000   --num_policy_stacks 2   --num_critic_stacks 2
 
+python scripts/co_rl/train.py \
+  --task Isaac-Velocity-Flat-D1h-v0 \
+  --algo ppo \
+  --headless \
+  --enable_cameras \
+  --num_envs 2048 \
+  --video \
+  --video_length 200 \
+  --video_interval 5000 \
+  --num_policy_stacks 2 \
+  --num_critic_stacks 2 \
+  --resume True \
+  --load_run 2026-05-07_21-13-41 \
+  --checkpoint model_1998.pt
+
 
 # Template for Isaac Lab Projects
 

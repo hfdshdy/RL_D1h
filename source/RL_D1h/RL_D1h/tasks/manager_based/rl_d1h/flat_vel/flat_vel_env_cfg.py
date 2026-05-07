@@ -214,21 +214,21 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         }
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-1.5, 1.5)
+        self.commands.base_velocity.ranges.lin_vel_x = (-1.3,1.3)
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-2.5, 2.5)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
         self.commands.base_velocity.ranges.pos_z = (0.0, 0.0)
 
         # terminations
-        # self.terminations.base_contact.params["sensor_cfg"].body_names = [
-        #     "base_link",
-        #     # ".*_hip",
-        #     # ".*_calf",
-        #     # ".*_thigh",
-        # ]
+        self.terminations.base_contact.params["sensor_cfg"].body_names = [
+            "base_link",
+            # ".*_hip",
+            # ".*_calf",
+            # ".*_thigh",
+        ]
         self.terminations.terrain_out_of_bounds = None
-        self.terminations.base_contact = None
+        # self.terminations.base_contact = None
 
 
 
