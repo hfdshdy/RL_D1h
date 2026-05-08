@@ -6,8 +6,13 @@ tensorboard \
   --port 6006 \
   --reload_interval 5
 
+
+看板
 python scripts/co_rl/train.py   --task Isaac-Velocity-Flat-D1h-v0   --algo ppo   --headless   --enable_cameras   --num_envs 2048   --video   --video_length 200   --video_interval 5000   --num_policy_stacks 2   --num_critic_stacks 2
 
+
+
+训练
 python scripts/co_rl/train.py \
   --task Isaac-Velocity-Flat-D1h-v0 \
   --algo ppo \
@@ -24,11 +29,35 @@ python scripts/co_rl/train.py \
   --checkpoint model_6299.pt \
   --max_iterations 1000
 
+
+推理
   python scripts/co_rl/play.py \
   --task Isaac-Velocity-Flat-D1h-Play-v0 \
   --algo ppo \
   --headless \
   --enable_cameras \
+  --num_envs 6 \
+  --video \
+  --video_length 2000 \
+  --num_policy_stacks 2 \
+  --num_critic_stacks 2 \
+  --load_run 2026-05-08_16-51-53 \
+  --checkpoint model_6950.pt 
+
+
+  键盘演示
+W 或上方向键：前进
+S 或下方向键：后退
+A 或左方向键：左转
+D 或右方向键：右转
+Q：抬高
+E：降低
+Space：速度清零
+R：高度归零
+Esc：速度清零并高度归零
+  python scripts/co_rl/keyboard_play.py \
+  --task Isaac-Velocity-Flat-D1h-Play-v0 \
+  --algo ppo \
   --num_envs 6 \
   --video \
   --video_length 2000 \

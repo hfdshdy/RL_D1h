@@ -132,10 +132,10 @@ class KeyboardVelocityCommand:
         self,
         num_envs: int,
         device: torch.device,
-        lin_vel_step: float = 0.6,
-        yaw_vel_step: float = 0.5,
+        lin_vel_step: float = 0.3,
+        yaw_vel_step: float = 0.3,
         height_step: float = 0.02,
-        height_min: float = -0.05,
+        height_min: float = -0.08,
         height_max: float = 0.05,
         height_init: float = 0.0,
     ):
