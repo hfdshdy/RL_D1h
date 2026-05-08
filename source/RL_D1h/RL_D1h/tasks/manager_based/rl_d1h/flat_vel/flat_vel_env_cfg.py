@@ -118,15 +118,27 @@ class D1HRewardsCfg():
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_thigh_joint")},
     )
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0) #惩罚 projected gravity 的 xy 分量平方和
+    # base_height = RewTerm(
+    #     func=mdp.base_height_adaptive_l2,
+    #     weight=-25.0,
+    #     params={
+    #         "default_height": 0.45,
+    #         "target_height": default_height + command[3],
+    #         "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
+    #         # "sensor_cfg": SceneEntityCfg("base_height_scanner"),
+    #     },
+    # )
+
     base_height = RewTerm(
-        func=mdp.base_height_adaptive_l2,
-        weight=-25.0,
-        params={
-            "target_height": 0.45,
-            "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),
-            # "sensor_cfg": SceneEntityCfg("base_height_scanner"),
-        },
-    )
+    func=mdp.track_pos_z_rel_exp,
+    weight=1.0,
+    params={
+        "temperature": 20.0,
+        "default_height": 0.45,
+        "asset_cfg": SceneEntityCfg("robot"),
+        "sensor_cfg": None,
+    },
+)
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-5)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)  # default: -2.5e-7
@@ -214,11 +226,11 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         }
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-1.3,1.3)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.9,0.9)
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
-        self.commands.base_velocity.ranges.pos_z = (0.0, 0.0)
+        self.commands.base_velocity.ranges.pos_z = (-0.05, 0.05)
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [

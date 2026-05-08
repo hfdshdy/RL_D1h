@@ -20,8 +20,9 @@ python scripts/co_rl/train.py \
   --num_policy_stacks 2 \
   --num_critic_stacks 2 \
   --resume True \
-  --load_run 2026-05-07_21-13-41 \
-  --checkpoint model_1998.pt
+  --load_run 2026-05-08_11-19-10 \
+  --checkpoint model_4497.pt \
+  --max_iterations 1000
 
 
 # Template for Isaac Lab Projects

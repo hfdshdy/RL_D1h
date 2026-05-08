@@ -228,6 +228,7 @@ class CoRlVecEnvWrapper(VecEnv):
         return obs_dict["policy"], {"observations": obs_dict}
 
     def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict]:
+        actions = torch.clamp(actions, -1.0, 1.0)
         obs_dict, rew, terminated, truncated, extras = self.env.step(actions)
 
         if not self.use_constraint_rl:
