@@ -20,8 +20,8 @@ python scripts/co_rl/train.py \
   --num_policy_stacks 2 \
   --num_critic_stacks 2 \
   --resume True \
-  --load_run 2026-05-08_11-37-11 \
-  --checkpoint model_5300.pt \
+  --load_run 2026-05-08_16-25-44 \
+  --checkpoint model_6299.pt \
   --max_iterations 1000
 
 

@@ -235,9 +235,9 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [
             "base_link",
-            # ".*_hip",
-            # ".*_calf",
-            # ".*_thigh",
+            ".*_hip",
+            ".*_calf",
+            ".*_thigh",
         ]
         self.terminations.terrain_out_of_bounds = None
         # self.terminations.base_contact = None
