@@ -99,7 +99,13 @@ import torch
 
 import carb
 import omni.appwindow
+import omni
+from omni.kit.viewport.utility import get_viewport_from_window_name
+from omni.kit.viewport.utility.camera_state import ViewportCameraState
+from pxr import Gf, Sdf
 
+from isaaclab.sim.utils.stage import get_current_stage
+from isaaclab.utils.math import quat_apply
 from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
 from isaaclab.utils.dict import print_dict
 from isaaclab.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
@@ -228,6 +234,121 @@ class KeyboardVelocityCommand:
             self._refresh_command()
 
         return True
+
+
+class SelectionCameraController:
+    """Handle mouse selection and third-person camera following a selected robot.
+
+    - Click on a robot prim to select it (expects env_* naming under /World).
+    - Press `C` to toggle between perspective and third-person camera.
+    - Press `ESC` to clear selection and return to perspective camera.
+    """
+
+    def __init__(self, env):
+        self.env = env
+        self.device = env.unwrapped.device
+        self._prim_selection = omni.usd.get_context().get_selection()
+        self._selected_id = None
+        self._previous_selected_id = None
+        self._camera_local_transform = torch.tensor([-2.5, 0.0, 0.8], device=self.device)
+
+        self.viewport = get_viewport_from_window_name("Viewport")
+        self.camera_path = "/World/Camera"
+        self.perspective_path = "/OmniverseKit_Persp"
+        self.create_camera()
+
+        # Subscribe to keyboard events to handle C / ESC toggles
+        self._input = carb.input.acquire_input_interface()
+        self._keyboard = omni.appwindow.get_default_app_window().get_keyboard()
+        self._sub_keyboard = self._input.subscribe_to_keyboard_events(self._keyboard, self._on_keyboard_event)
+
+    def create_camera(self):
+        stage = get_current_stage()
+        try:
+            camera_prim = stage.DefinePrim(self.camera_path, "Camera")
+            camera_prim.GetAttribute("focalLength").Set(8.5)
+            coi_prop = camera_prim.GetProperty("omni:kit:centerOfInterest")
+            if not coi_prop or not coi_prop.IsValid():
+                camera_prim.CreateAttribute(
+                    "omni:kit:centerOfInterest", Sdf.ValueTypeNames.Vector3d, True, Sdf.VariabilityUniform
+                ).Set(Gf.Vec3d(0, 0, -10))
+        except Exception:
+            # If camera already exists or stage not ready, ignore.
+            pass
+        try:
+            self.viewport.set_active_camera(self.perspective_path)
+        except Exception:
+            pass
+
+    def _on_keyboard_event(self, event):
+        if event.type == carb.input.KeyboardEventType.KEY_PRESS:
+            if event.input.name == "ESCAPE":
+                self._prim_selection.clear_selected_prim_paths()
+            elif event.input.name == "C":
+                try:
+                    if self.viewport.get_active_camera() == self.camera_path:
+                        self.viewport.set_active_camera(self.perspective_path)
+                    else:
+                        self.viewport.set_active_camera(self.camera_path)
+                except Exception:
+                    pass
+
+    def update_selected_object(self):
+        self._previous_selected_id = self._selected_id
+        selected_prim_paths = self._prim_selection.get_selected_prim_paths()
+        if len(selected_prim_paths) == 0:
+            self._selected_id = None
+            try:
+                self.viewport.set_active_camera(self.perspective_path)
+            except Exception:
+                pass
+        elif len(selected_prim_paths) > 1:
+            print("Multiple prims are selected. Please only select one!")
+        else:
+            prim_splitted_path = selected_prim_paths[0].split("/")
+            # Find an env_N segment in the path
+            env_index = None
+            for part in prim_splitted_path:
+                if part.startswith("env_"):
+                    try:
+                        env_index = int(part[4:])
+                    except Exception:
+                        env_index = None
+                    break
+            if env_index is not None:
+                self._selected_id = env_index
+                if self._previous_selected_id != self._selected_id:
+                    try:
+                        self.viewport.set_active_camera(self.camera_path)
+                    except Exception:
+                        pass
+                self._update_camera()
+            else:
+                print("The selected prim was not an environment robot")
+
+        # If selection changed, reset previous env command (if manager supports it)
+        if self._previous_selected_id is not None and self._previous_selected_id != self._selected_id:
+            try:
+                self.env.unwrapped.command_manager.reset([self._previous_selected_id])
+            except Exception:
+                pass
+
+    def _update_camera(self):
+        if self._selected_id is None:
+            return
+        try:
+            base_pos = self.env.unwrapped.scene["robot"].data.root_pos_w[self._selected_id, :]
+            base_quat = self.env.unwrapped.scene["robot"].data.root_quat_w[self._selected_id, :]
+
+            camera_pos = quat_apply(base_quat, self._camera_local_transform) + base_pos
+
+            camera_state = ViewportCameraState(self.camera_path, self.viewport)
+            eye = Gf.Vec3d(camera_pos[0].item(), camera_pos[1].item(), camera_pos[2].item())
+            target = Gf.Vec3d(base_pos[0].item(), base_pos[1].item(), base_pos[2].item() + 0.6)
+            camera_state.set_position_world(eye, True)
+            camera_state.set_target_world(target, True)
+        except Exception:
+            pass
 
 
 def _set_keyboard_demo_env_cfg(env_cfg):
@@ -423,6 +544,12 @@ def main():
         height_init=args_cli.keyboard_start_height,
     )
 
+    # Selection & third-person camera controller (optional)
+    try:
+        selection_controller = SelectionCameraController(env)
+    except Exception:
+        selection_controller = None
+
     # Command term.
     base_command_term = env.unwrapped.command_manager.get_term("base_velocity")
 
@@ -431,9 +558,24 @@ def main():
 
     # Play loop.
     while simulation_app.is_running():
+        # update selection and camera each frame
+        if selection_controller is not None:
+            selection_controller.update_selected_object()
         with torch.inference_mode():
             # Write keyboard command before policy inference.
-            base_command_term.vel_command_b[:] = keyboard.commands
+            # If a robot is selected, apply keyboard command only to that env index.
+            if selection_controller is not None and selection_controller._selected_id is not None:
+                # start with the default/last command tensor
+                default_cmds = env.unwrapped.command_manager.get_term("base_velocity").vel_command_b.clone()
+                sid = selection_controller._selected_id
+                try:
+                    default_cmds[sid : sid + 1, :] = keyboard.commands[sid : sid + 1, :]
+                except Exception:
+                    # fallback: apply keyboard.commands to the selected row
+                    default_cmds[sid : sid + 1, :] = keyboard.commands[0:1, :]
+                base_command_term.vel_command_b[:] = default_cmds
+            else:
+                base_command_term.vel_command_b[:] = keyboard.commands
 
             if srm is not None:
                 encoded_obs = runner.alg.encode_obs(obs)
@@ -444,12 +586,25 @@ def main():
             # Match your play.py behavior: clip actions before stepping.
             clipped_actions = torch.clamp(actions, -1.0, 1.0)
 
-            # Write again right before env.step().
-            base_command_term.vel_command_b[:] = keyboard.commands
+            # Write again right before env.step(). Use selection logic.
+            if selection_controller is not None and selection_controller._selected_id is not None:
+                sid = selection_controller._selected_id
+                try:
+                    base_command_term.vel_command_b[:] = default_cmds
+                except Exception:
+                    base_command_term.vel_command_b[:] = keyboard.commands
+            else:
+                base_command_term.vel_command_b[:] = keyboard.commands
             obs, _, dones, extras = env.step(clipped_actions)
 
             # Write after env.step() so the next computed observation sees the latest command.
-            base_command_term.vel_command_b[:] = keyboard.commands
+            if selection_controller is not None and selection_controller._selected_id is not None:
+                try:
+                    base_command_term.vel_command_b[:] = default_cmds
+                except Exception:
+                    base_command_term.vel_command_b[:] = keyboard.commands
+            else:
+                base_command_term.vel_command_b[:] = keyboard.commands
 
         if args_cli.real_time:
             # Policy step is normally sim.dt * decimation, but use env cfg if available.
