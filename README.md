@@ -24,6 +24,19 @@ python scripts/co_rl/train.py \
   --checkpoint model_6299.pt \
   --max_iterations 1000
 
+  python scripts/co_rl/play.py \
+  --task Isaac-Velocity-Flat-D1h-Play-v0 \
+  --algo ppo \
+  --headless \
+  --enable_cameras \
+  --num_envs 6 \
+  --video \
+  --video_length 2000 \
+  --num_policy_stacks 2 \
+  --num_critic_stacks 2 \
+  --load_run 2026-05-08_16-51-53 \
+  --checkpoint model_6950.pt 
+
 
 # Template for Isaac Lab Projects
 

@@ -292,9 +292,9 @@ class D1HFlatEnvCfg_PLAY(D1HFlatEnvCfg):
         }
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.9, 0.9)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.7, 0.7)
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.7, 0.7)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         self.commands.base_velocity.ranges.heading = (-0.0, 0.0)
         self.commands.base_velocity.ranges.pos_z = (-0.1, 0.05)
 
