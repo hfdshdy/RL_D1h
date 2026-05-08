@@ -100,11 +100,12 @@ import torch
 import carb
 import omni.appwindow
 import omni
+import omni.usd
 from omni.kit.viewport.utility import get_viewport_from_window_name
 from omni.kit.viewport.utility.camera_state import ViewportCameraState
 from pxr import Gf, Sdf
 
-from isaaclab.sim.utils.stage import get_current_stage
+
 from isaaclab.utils.math import quat_apply
 from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
 from isaaclab.utils.dict import print_dict
@@ -263,7 +264,7 @@ class SelectionCameraController:
         self._sub_keyboard = self._input.subscribe_to_keyboard_events(self._keyboard, self._on_keyboard_event)
 
     def create_camera(self):
-        stage = get_current_stage()
+        stage = omni.usd.get_context().get_stage()
         try:
             camera_prim = stage.DefinePrim(self.camera_path, "Camera")
             camera_prim.GetAttribute("focalLength").Set(8.5)
