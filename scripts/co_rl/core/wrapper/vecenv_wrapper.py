@@ -228,8 +228,47 @@ class CoRlVecEnvWrapper(VecEnv):
         return obs_dict["policy"], {"observations": obs_dict}
 
     def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict]:
+        raw_actions = actions.detach()
         actions = torch.clamp(actions, -1.0, 1.0)
         obs_dict, rew, terminated, truncated, extras = self.env.step(actions)
+
+        # # ===== Debug metrics for TensorBoard =====
+        # # 假设最后两个 action 是 FL_foot_joint / FR_foot_joint
+        # wheel_raw_actions = raw_actions[:, -2:]
+        # wheel_clipped_actions = actions[:, -2:]
+
+        # # scale=10.0 对应 velocity target = action * 10.0
+        # wheel_vel_target = wheel_clipped_actions * 10.0
+
+        # debug_log = {
+        #     "Debug/action_abs_max": raw_actions.abs().max(),
+        #     "Debug/action_abs_mean": raw_actions.abs().mean(),
+        #     "Debug/wheel_raw_abs_max": wheel_raw_actions.abs().max(),
+        #     "Debug/wheel_clipped_abs_max": wheel_clipped_actions.abs().max(),
+        #     "Debug/wheel_action_sat_ratio": (wheel_raw_actions.abs() > 0.98).float().mean(),
+        #     "Debug/wheel_vel_target_abs_max": wheel_vel_target.abs().max(),
+        #     "Debug/wheel_vel_target_abs_mean": wheel_vel_target.abs().mean(),
+        # }
+
+        # # 记录实际 wheel joint velocity
+        # try:
+        #     robot = self.unwrapped.scene["robot"]
+        #     wheel_joint_ids, _ = robot.find_joints(["FL_foot_joint", "FR_foot_joint"])
+        #     wheel_joint_vel = robot.data.joint_vel[:, wheel_joint_ids]
+
+        #     debug_log.update(
+        #         {
+        #             "Debug/wheel_joint_vel_abs_max": wheel_joint_vel.abs().max(),
+        #             "Debug/wheel_joint_vel_abs_mean": wheel_joint_vel.abs().mean(),
+        #             "Debug/wheel_joint_vel_limit_ratio": wheel_joint_vel.abs().max() / 12.5,
+        #         }
+        #     )
+        # except Exception:
+        #     pass
+
+        # if "log" not in extras:
+        #     extras["log"] = {}
+        # extras["log"].update(debug_log)
 
         if not self.use_constraint_rl:
             dones = (terminated | truncated).to(dtype=torch.long)
