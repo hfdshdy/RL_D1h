@@ -64,22 +64,20 @@ class UniformVelocityWithZCommand(UniformVelocityCommand):
     def _update_command(self):
         self.time_elapsed += self._env.step_dt
 
-        initial_phase_env_ids = (self.time_elapsed <= self.cfg.initial_phase_time).nonzero(as_tuple=False).flatten()
-        if len(initial_phase_env_ids) > 0:
-            self.vel_command_b[initial_phase_env_ids, :3] = 0.0
-            if self.track_z_flag:
-                self.vel_command_b[initial_phase_env_ids, 3] = self._sample_heights(initial_phase_env_ids)
-            else:
-                self.vel_command_b[initial_phase_env_ids, 3] = 0.0
-
         reset_env_ids = self._env.reset_buf.nonzero(as_tuple=False).flatten()
         if len(reset_env_ids) > 0:
             self.time_elapsed[reset_env_ids] = 0.0
+
+        initial_phase_env_ids = (self.time_elapsed <= self.cfg.initial_phase_time).nonzero(as_tuple=False).flatten()
 
         standing_env_ids = self.is_standing_env.nonzero(as_tuple=False).flatten()
         self.vel_command_b[standing_env_ids, :3] = 0.0
         if len(standing_env_ids) > 0:
             self.vel_command_b[standing_env_ids, 3] = self.standing_choice[standing_env_ids]
+
+        if len(initial_phase_env_ids) > 0:
+            self.vel_command_b[initial_phase_env_ids, :3] = 0.0
+            self.vel_command_b[initial_phase_env_ids, 3] = 0.0
 
     def _sample_heights(self, env_ids: Sequence[int]) -> torch.Tensor:
         if len(env_ids) == 0:

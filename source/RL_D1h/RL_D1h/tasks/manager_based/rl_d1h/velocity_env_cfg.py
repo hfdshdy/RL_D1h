@@ -149,9 +149,9 @@ class CommandsCfg:
         heading_command=False,
         debug_vis=True,   #  表示把 command 可视化出来
         ranges=mdp.UniformVelocityWithZCommandCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.0, 0.0), ang_vel_z=(-1.0, 1.0), pos_z=(-0.2, 0.07)
+            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.0, 0.0), ang_vel_z=(-1.0, 1.0), pos_z=(-0.15, 0.07)
         ),
-        initial_phase_time=0.5,    # 每个 episode 开始的初始静止阶段
+        initial_phase_time=0.0,    # 每个 episode 开始的初始静止阶段
     )
 
 
