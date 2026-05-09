@@ -107,6 +107,58 @@ class CoRlVecEnvWrapper(VecEnv):
         # reset at the start since the RSL-RL runner does not call reset
         self.env.reset()
 
+
+#高度追踪效果数据观测
+    def _get_height_debug_metrics(self) -> dict[str, torch.Tensor]:
+        """Compute height-control debug metrics using the active base-height reward configuration."""
+        if not hasattr(self.unwrapped, "command_manager"):
+            return {}
+
+        reward_cfg = getattr(getattr(self.unwrapped.cfg, "rewards", None), "base_height", None)
+        if reward_cfg is None or not hasattr(reward_cfg, "params"):
+            return {}
+
+        params = reward_cfg.params
+        asset_cfg = params.get("asset_cfg")
+        robot_name = asset_cfg.name if asset_cfg is not None else "robot"
+        try:
+            robot = self.unwrapped.scene[robot_name]
+        except Exception:
+            return {}
+
+        base_z = robot.data.root_link_pos_w[:, 2]
+        command_z = self.unwrapped.command_manager.get_command("base_velocity")[:, 3]
+
+        default_height = params.get("default_height")
+        if default_height is None:
+            target_z = command_z
+        else:
+            target_z = command_z + default_height
+
+        sensor_cfg = params.get("sensor_cfg")
+        if sensor_cfg is not None:
+            sensor = self.unwrapped.scene[sensor_cfg.name]
+            target_z = target_z + torch.mean(sensor.data.ray_hits_w[..., 2], dim=1)
+
+        height_abs_error = torch.abs(target_z - base_z)
+
+        reward_func = getattr(reward_cfg, "func", None)
+        if reward_func is not None:
+            height_raw_reward = reward_func(self.unwrapped, **params)
+        else:
+            temperature = params.get("temperature", 1.0)
+            height_raw_reward = torch.exp(-torch.square(target_z - base_z) * temperature)
+
+        return {
+            "Debug/base_z_mean": base_z.mean(),
+            "Debug/target_z_mean": target_z.mean(),
+            "Debug/height_abs_error": height_abs_error.mean(),
+            "Debug/height_raw_reward": height_raw_reward.mean(),
+        }
+
+   
+   
+   
     def __str__(self):
         """Returns the wrapper name and the :attr:`env` representation string."""
         return f"<{type(self).__name__}{self.env}>"
@@ -232,6 +284,8 @@ class CoRlVecEnvWrapper(VecEnv):
         actions = torch.clamp(actions, -1.0, 1.0)
         obs_dict, rew, terminated, truncated, extras = self.env.step(actions)
 
+        height_debug_metrics = self._get_height_debug_metrics()
+
         # # ===== Debug metrics for TensorBoard =====
         # # 假设最后两个 action 是 FL_foot_joint / FR_foot_joint
         # wheel_raw_actions = raw_actions[:, -2:]
@@ -266,9 +320,10 @@ class CoRlVecEnvWrapper(VecEnv):
         # except Exception:
         #     pass
 
-        # if "log" not in extras:
-        #     extras["log"] = {}
-        # extras["log"].update(debug_log)
+        if height_debug_metrics:
+            if "log" not in extras:
+                extras["log"] = {}
+            extras["log"].update(height_debug_metrics)
 
         if not self.use_constraint_rl:
             dones = (terminated | truncated).to(dtype=torch.long)
