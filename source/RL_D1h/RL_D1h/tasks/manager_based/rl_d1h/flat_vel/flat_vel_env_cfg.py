@@ -37,7 +37,7 @@ class D1HRewardsCfg():
     #     func=mdp.track_lin_vel_xy_link_exp, weight=2.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     # )
     track_ang_vel_z_exp = RewTerm(
-        func=mdp.track_ang_vel_z_link_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_ang_vel_z_link_exp, weight=1.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
 
     track_lin_vel_xy_exp = RewTerm(
@@ -214,9 +214,9 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.physics_material.params["static_friction_range"] = (0.5, 1.0)
         self.events.physics_material.params["dynamic_friction_range"] = (0.5, 0.8)
         self.events.reset_base.params = {
-            "pose_range": {"x": (-0.2, 0.2), "y": (-0.2, 0.2), "yaw": (-2.14, 2.14)},
+            "pose_range": {"x": (-0.2, 0.2), "y": (-0.2, 0.2), "yaw": (-3.14, 3.14)},
             "velocity_range": {
-                "x": (0.0, 0.0),
+                "x": (-0.5, 0.5),
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (-0.25, 0.25),
@@ -230,7 +230,7 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-0.7, 0.7)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.1, 0.07) #角速度
+        self.commands.base_velocity.ranges.pos_z = (-0.2, 0.07)
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [

@@ -144,14 +144,14 @@ class CommandsCfg:
     base_velocity = mdp.UniformVelocityWithZCommandCfg(
         asset_name="robot",
         resampling_time_range=(6.0, 8.0),
-        rel_standing_envs=0.01,
+        rel_standing_envs=0.01,    # 表示大约 1% 的环境会被设成站立命令
         rel_heading_envs=0.0,
         heading_command=False,
-        debug_vis=True,
+        debug_vis=True,   #  表示把 command 可视化出来
         ranges=mdp.UniformVelocityWithZCommandCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.0, 0.0), ang_vel_z=(-2.0, 2.0), pos_z=(0.35, 0.65)
+            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.0, 0.0), ang_vel_z=(-1.0, 1.0), pos_z=(-0.2, 0.07)
         ),
-        initial_phase_time=2.0,
+        initial_phase_time=0.5,    # 每个 episode 开始的初始静止阶段
     )
 
 
@@ -398,7 +398,7 @@ class EventCfg:
             "static_friction_range": (0.8, 1.0),
             "dynamic_friction_range": (0.6, 0.8),
             "restitution_range": (0.0, 0.0),
-            "num_buckets": 64,
+            "num_buckets": 64, # 预先生成 64 组不同的物理材质参数，然后随机分配给机器人各个 collision shape
         },
     )
 
