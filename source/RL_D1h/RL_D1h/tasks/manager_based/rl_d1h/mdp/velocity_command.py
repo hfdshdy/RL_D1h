@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class UniformVelocityWithZCommand(UniformVelocityCommand):
-    """Velocity command with an additional discrete height target."""
+    """Velocity command with an additional continuous height target."""
 
     def __init__(self, cfg: UniformVelocityWithZCommandCfg, env: ManagerBasedEnv):
         super().__init__(cfg, env)
@@ -45,7 +45,7 @@ class UniformVelocityWithZCommand(UniformVelocityCommand):
         self.vel_command_b[env_ids, 2] = r.uniform_(*self.cfg.ranges.ang_vel_z)
 
         if self.track_z_flag:
-            self.vel_command_b[env_ids, 3] = self._sample_height_categories(env_ids, 5)
+            self.vel_command_b[env_ids, 3] = self._sample_heights(env_ids)
         else:
             self.vel_command_b[env_ids, 3] = 0.0
 
@@ -57,7 +57,7 @@ class UniformVelocityWithZCommand(UniformVelocityCommand):
         standing_env_ids = self.is_standing_env.nonzero(as_tuple=False).flatten()
         if len(standing_env_ids) > 0:
             if self.track_z_flag:
-                self.standing_choice[standing_env_ids] = self._sample_height_categories(standing_env_ids, 2)
+                self.standing_choice[standing_env_ids] = self._sample_heights(standing_env_ids)
             else:
                 self.standing_choice[standing_env_ids] = 0.0
 
@@ -68,7 +68,7 @@ class UniformVelocityWithZCommand(UniformVelocityCommand):
         if len(initial_phase_env_ids) > 0:
             self.vel_command_b[initial_phase_env_ids, :3] = 0.0
             if self.track_z_flag:
-                self.vel_command_b[initial_phase_env_ids, 3] = self._sample_height_categories(initial_phase_env_ids, 5)
+                self.vel_command_b[initial_phase_env_ids, 3] = self._sample_heights(initial_phase_env_ids)
             else:
                 self.vel_command_b[initial_phase_env_ids, 3] = 0.0
 
@@ -81,12 +81,10 @@ class UniformVelocityWithZCommand(UniformVelocityCommand):
         if len(standing_env_ids) > 0:
             self.vel_command_b[standing_env_ids, 3] = self.standing_choice[standing_env_ids]
 
-    def _sample_height_categories(self, env_ids: Sequence[int], num_categories: int) -> torch.Tensor:
+    def _sample_heights(self, env_ids: Sequence[int]) -> torch.Tensor:
         if len(env_ids) == 0:
             return torch.tensor([], device=self.device)
-        probabilities = torch.ones(num_categories, device=self.device) / num_categories
-        categories = torch.linspace(self.cfg.ranges.pos_z[0], self.cfg.ranges.pos_z[1], num_categories, device=self.device)
-        return categories[torch.multinomial(probabilities, len(env_ids), replacement=True)]
+        return torch.empty(len(env_ids), device=self.device).uniform_(*self.cfg.ranges.pos_z)
 
 
 @configclass
