@@ -131,9 +131,9 @@ class D1HRewardsCfg():
 
     base_height = RewTerm(
     func=mdp.track_pos_z_rel_exp,
-    weight=1.0,
+    weight=2.0,
     params={
-        "temperature": 20.0,
+        "temperature": 35.0,  # 指数的系数，决定高度误差的敏感程度
         "default_height": 0.45,
         "asset_cfg": SceneEntityCfg("robot"),
         "sensor_cfg": None,
@@ -230,7 +230,7 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-0.7, 0.7)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.2, 0.07)
+        self.commands.base_velocity.ranges.pos_z = (-0.15, 0.07)
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [

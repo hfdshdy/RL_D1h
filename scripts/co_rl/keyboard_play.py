@@ -60,6 +60,11 @@ parser.add_argument("--num_envs", type=int, default=1, help="Number of environme
 parser.add_argument("--algo", type=str, default="ppo", help="Algorithm name: ppo or srmppo.")
 parser.add_argument("--task", type=str, default="Isaac-Velocity-Flat-D1h-Play-v0", help="Task name.")
 parser.add_argument("--seed", type=int, default=42, help="Seed used for the environment.")
+parser.add_argument(
+    "--use_pretrained_checkpoint",
+    action="store_true",
+    help="Use the pre-trained checkpoint from Nucleus.",
+)
 parser.add_argument("--real-time", action="store_true", default=False, help="Try to run in real time.")
 parser.add_argument("--num_policy_stacks", type=int, default=2, help="Number of policy stacks.")
 parser.add_argument("--num_critic_stacks", type=int, default=2, help="Number of critic stacks.")
@@ -444,7 +449,7 @@ def main():
     log_root_path = os.path.abspath(log_root_path)
     print(f"[INFO] Loading experiment from directory: {log_root_path}")
 
-    if args_cli.use_pretrained_checkpoint:
+    if getattr(args_cli, "use_pretrained_checkpoint", False):
         resume_path = get_published_pretrained_checkpoint("co_rl", args_cli.task)
         if not resume_path:
             print("[INFO] No published pre-trained checkpoint is available for this task.")
