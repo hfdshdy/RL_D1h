@@ -1,5 +1,5 @@
  tensorboard   --logdir /root/RL_D1/RL_D1h/logs/co_rl/d1h_flat_velocity/ppo/2026-05-06_19-55-13   --host 0.0.0.0   --port 6006
-
+看板
 tensorboard \
   --logdir /root/RL_D1/RL_D1h/logs/co_rl/d1h_flat_velocity/ppo \
   --host 0.0.0.0 \
@@ -7,7 +7,7 @@ tensorboard \
   --reload_interval 5
 
 
-看板
+
 python scripts/co_rl/train.py   --task Isaac-Velocity-Flat-D1h-v0   --algo ppo   --headless   --enable_cameras   --num_envs 2048   --video   --video_length 200   --video_interval 5000   --num_policy_stacks 2   --num_critic_stacks 2
 
 
@@ -25,8 +25,8 @@ python scripts/co_rl/train.py \
   --num_policy_stacks 2 \
   --num_critic_stacks 2 \
   --resume True \
-  --load_run 2026-05-08_16-25-44 \
-  --checkpoint model_6299.pt \
+  --load_run 2026-05-09_17-03-16 \
+  --checkpoint model_9450.pt \
   --max_iterations 1000
 
 
@@ -41,8 +41,8 @@ python scripts/co_rl/train.py \
   --video_length 2000 \
   --num_policy_stacks 2 \
   --num_critic_stacks 2 \
-  --load_run 2026-05-08_16-51-53 \
-  --checkpoint model_6950.pt 
+  --load_run 2026-05-09_21-45-27 \
+  --checkpoint model_9850.pt 
 
 
   键盘演示

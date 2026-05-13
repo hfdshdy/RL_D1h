@@ -230,7 +230,7 @@ class D1HFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-0.7, 0.7)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.15, 0.07)
+        self.commands.base_velocity.ranges.pos_z = (-0.07, 0.07)
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [
