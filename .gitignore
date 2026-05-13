@@ -5,23 +5,9 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
-# training logs and videos
-log/
-logs/
-outputs/
-wandb/
-runs/
-videos/
-
-# model checkpoints
-*.pt
-*.pth
-*.onnx
-*.jit
-*.ckpt
-
-# TensorBoard
-events.out.tfevents*
+# runtime outputs
+/logs/
+/outputs/
 
 # editor/server cache
 .vscode-server/
