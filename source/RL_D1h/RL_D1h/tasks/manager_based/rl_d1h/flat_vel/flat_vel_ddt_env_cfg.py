@@ -287,22 +287,22 @@ class DdtRewardsCfg:
     )
     calf_align_l1 = RewTerm(
         func=mdp.joint_align_l1,
-        weight=-0.2,
+        weight=-0.6,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_calf_joint")},
     )
     leg_align_l1 = RewTerm(
         func=mdp.joint_align_l1,
-        weight=-0.1,
+        weight=-0.6,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_thigh_joint")},
     )
 
     # --- height tracking ---
     base_height = RewTerm(
         func=mdp.track_pos_z_rel_exp,
-        weight=4.0,
+        weight=2.0,
         params={
             "temperature": 35.0,
-            "default_height": 0.50,
+            "default_height": 0.45,
             "asset_cfg": SceneEntityCfg("robot"),
             "sensor_cfg": None,
         },
@@ -382,7 +382,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
 
         # ---- policy frequency: 100 Hz ----
         # sim.dt = 0.005 s, decimation = 2  →  policy_dt = 0.01 s = 100 Hz
-        self.decimation = 2
+        self.decimation = 4
 
         # ---- disable all height/mask sensors (not needed for flat terrain) ----
         self.scene.height_scanner = None
@@ -413,18 +413,18 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.2, 0.2)
-        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.2, 0.2)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.1, 0.1)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.05, 0.05)
+        self.commands.base_velocity.ranges.pos_z = (-0.08, 0.08)
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [
             "base_link",
-            # ".*_hip",
-            # ".*_calf",
-            # ".*_thigh",
+            ".*_hip",
+            ".*_calf",
+            ".*_thigh",
         ]
         self.terminations.terrain_out_of_bounds = None
         # self.terminations.base_contact = None

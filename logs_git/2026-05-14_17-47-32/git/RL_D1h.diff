@@ -1,0 +1,117 @@
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+	modified:   source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+	modified:   source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/README.md b/README.md
+index 761ff20..cc87793 100644
+--- a/README.md
++++ b/README.md
+@@ -21,8 +21,8 @@ python scripts/co_rl/ddt_train.py \
+   --video_interval 5000 \
+   --max_iterations 1000 \
+   --resume True \
+-  --load_run 2026-05-14_17-08-21 \
+-  --checkpoint model_1900.pt 
++  --load_run 2026-05-14_17-35-00 \
++  --checkpoint model_4050.pt 
+ 
+ 
+ 
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+index 0c12890..db428ff 100644
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
++++ b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+@@ -287,22 +287,22 @@ class DdtRewardsCfg:
+     )
+     calf_align_l1 = RewTerm(
+         func=mdp.joint_align_l1,
+-        weight=-0.2,
++        weight=-0.4,
+         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_calf_joint")},
+     )
+     leg_align_l1 = RewTerm(
+         func=mdp.joint_align_l1,
+-        weight=-0.1,
++        weight=-0.4,
+         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_thigh_joint")},
+     )
+ 
+     # --- height tracking ---
+     base_height = RewTerm(
+         func=mdp.track_pos_z_rel_exp,
+-        weight=4.0,
++        weight=2.0,
+         params={
+             "temperature": 35.0,
+-            "default_height": 0.50,
++            "default_height": 0.45,
+             "asset_cfg": SceneEntityCfg("robot"),
+             "sensor_cfg": None,
+         },
+@@ -382,7 +382,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+ 
+         # ---- policy frequency: 100 Hz ----
+         # sim.dt = 0.005 s, decimation = 2  →  policy_dt = 0.01 s = 100 Hz
+-        self.decimation = 2
++        self.decimation = 4
+ 
+         # ---- disable all height/mask sensors (not needed for flat terrain) ----
+         self.scene.height_scanner = None
+@@ -413,18 +413,18 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+         self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
+ 
+         # commands
+-        self.commands.base_velocity.ranges.lin_vel_x = (-0.2, 0.2)
++        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 0.5)
+         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+-        self.commands.base_velocity.ranges.ang_vel_z = (-0.2, 0.2)
++        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
+         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
+-        self.commands.base_velocity.ranges.pos_z = (-0.05, 0.05)
++        self.commands.base_velocity.ranges.pos_z = (-0.08, 0.08)
+ 
+         # terminations
+         self.terminations.base_contact.params["sensor_cfg"].body_names = [
+             "base_link",
+-            # ".*_hip",
+-            # ".*_calf",
+-            # ".*_thigh",
++            ".*_hip",
++            ".*_calf",
++            ".*_thigh",
+         ]
+         self.terminations.terrain_out_of_bounds = None
+         # self.terminations.base_contact = None
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
+index ba8e3a4..f2c51a2 100644
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
++++ b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
+@@ -510,7 +510,7 @@ class TerminationsCfg:
+     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+     base_contact = DoneTerm(
+         func=mdp.illegal_contact,
+-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 40.0},
++        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 20.0},
+     )
+     terrain_out_of_bounds = DoneTerm(
+         func=mdp.terrain_out_of_bounds,
+@@ -611,7 +611,7 @@ class LocomotionVelocityFlatEnvCfg(ManagerBasedRLEnvCfg):
+         """Post initialization."""
+         # general settings
+         self.decimation = 4
+-        self.episode_length_s = 30.0
++        self.episode_length_s = 20.0
+         # simulation settings
+         self.sim.dt = 0.005
+         self.sim.disable_contact_processing = True
