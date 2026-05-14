@@ -237,7 +237,7 @@ class DdtRewardsCfg:
         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
 
-    termination_penalty = RewTerm(func=mdp.is_terminated, weight=-25.0)
+    termination_penalty = RewTerm(func=mdp.is_terminated, weight=-20.0)
 
     # --- regularisation ---
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_link_l2, weight=-1.0)
@@ -299,7 +299,7 @@ class DdtRewardsCfg:
     # --- height tracking ---
     base_height = RewTerm(
         func=mdp.track_pos_z_rel_exp,
-        weight=2.0,
+        weight=4.0,
         params={
             "temperature": 35.0,
             "default_height": 0.50,
@@ -402,32 +402,32 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.reset_robot_joints.params["position_range"] = (-0.15, 0.15)
         self.events.push_robot.interval_range_s = (10.0, 15.0)
         self.events.push_robot.params = {
-            "velocity_range": {"x": (-0.1, 0.05), "y": (-0.1, 0.1), "z": (-0.1, 0.1)},
+            "velocity_range": {"x": (-0.1, 0.05), "y": (-0.01, 0.01), "z": (-0.01, 0.01)},
         }
         self.events.add_base_mass.params["asset_cfg"].body_names = ["base_link"]
-        self.events.add_base_mass.params["mass_distribution_params"] = (-0.75, 3.0)
+        self.events.add_base_mass.params["mass_distribution_params"] = (-0.75, 1.0)
         self.events.physics_material.params["asset_cfg"].body_names = [
             ".*_hip", ".*_thigh", ".*_calf", ".*_foot", ".*base.*"
         ]
-        self.events.physics_material.params["static_friction_range"] = (0.5, 1.0)
-        self.events.physics_material.params["dynamic_friction_range"] = (0.5, 0.8)
+        self.events.physics_material.params["static_friction_range"] = (0.7, 1.0)
+        self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.2, 0.2)
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.2, 0.2)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.07, 0.07)
+        self.commands.base_velocity.ranges.pos_z = (-0.05, 0.05)
 
         # terminations
-        # self.terminations.base_contact.params["sensor_cfg"].body_names = [
-        #     "base_link",
-        #     ".*_hip",
-        #     ".*_calf",
-        #     ".*_thigh",
-        # ]
+        self.terminations.base_contact.params["sensor_cfg"].body_names = [
+            "base_link",
+            # ".*_hip",
+            # ".*_calf",
+            # ".*_thigh",
+        ]
         self.terminations.terrain_out_of_bounds = None
-        self.terminations.base_contact = None
+        # self.terminations.base_contact = None
 
 
         # Print summary for verification

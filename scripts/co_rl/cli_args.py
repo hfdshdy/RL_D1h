@@ -12,6 +12,17 @@ if TYPE_CHECKING:
     from isaaclab_tasks.utils.wrappers.co_rl import CoRlPolicyRunnerCfg
 
 
+def _str2bool(value: str | bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    normalized = value.strip().lower()
+    if normalized in {"true", "1", "yes", "y", "on"}:
+        return True
+    if normalized in {"false", "0", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
+
+
 def add_co_rl_args(parser: argparse.ArgumentParser):
     """Add CO-RL arguments to the parser.
 
@@ -26,7 +37,14 @@ def add_co_rl_args(parser: argparse.ArgumentParser):
     )
     arg_group.add_argument("--run_name", type=str, default=None, help="Run name suffix to the log directory.")
     # -- load arguments
-    arg_group.add_argument("--resume", type=bool, default=None, help="Whether to resume from a checkpoint.")
+    arg_group.add_argument(
+        "--resume",
+        type=_str2bool,
+        nargs="?",
+        const=True,
+        default=None,
+        help="Whether to resume from a checkpoint.",
+    )
     arg_group.add_argument("--load_run", type=str, default=None, help="Name of the run folder to resume from.")
     arg_group.add_argument("--checkpoint", type=str, default=None, help="Checkpoint file to resume from.")
     # -- logger arguments

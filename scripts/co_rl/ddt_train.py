@@ -93,6 +93,8 @@ torch.backends.cudnn.benchmark = False
 def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: CoRlPolicyRunnerCfg):
     """Train DDT-compatible D1H policy."""
 
+    agent_cfg = cli_args.update_co_rl_cfg(agent_cfg, args_cli)
+
     # ── override CLI args ────────────────────────────────────────────────────
     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs else env_cfg.scene.num_envs
     if args_cli.max_iterations is not None:

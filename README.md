@@ -1,7 +1,7 @@
  tensorboard   --logdir /root/RL_D1/RL_D1h/logs/co_rl/d1h_flat_velocity/ppo/2026-05-06_19-55-13   --host 0.0.0.0   --port 6006
 看板
 tensorboard \
-  --logdir /root/RL_D1/RL_D1h/logs/co_rl/d1h_flat_velocity/ppo \
+  --logdir /root/RL_D1/RL_D1h/logs/co_rl/d1h_ddt_flat_velocity/ddt_ppo \
   --host 0.0.0.0 \
   --port 6006 \
   --reload_interval 5
@@ -19,7 +19,10 @@ python scripts/co_rl/ddt_train.py \
   --video \
   --video_length 200 \
   --video_interval 5000 \
-  --max_iterations 1000
+  --max_iterations 1000 \
+  --resume True \
+  --load_run 2026-05-14_17-08-21 \
+  --checkpoint model_1900.pt 
 
 
 
