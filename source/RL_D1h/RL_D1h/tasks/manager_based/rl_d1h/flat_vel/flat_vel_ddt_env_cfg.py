@@ -302,7 +302,7 @@ class DdtRewardsCfg:
         weight=2.0,
         params={
             "temperature": 35.0,
-            "default_height": 0.45,
+            "default_height": 0.50,
             "asset_cfg": SceneEntityCfg("robot"),
             "sensor_cfg": None,
         },
@@ -411,6 +411,24 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         ]
         self.events.physics_material.params["static_friction_range"] = (0.5, 1.0)
         self.events.physics_material.params["dynamic_friction_range"] = (0.5, 0.8)
+
+        # commands
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
+        # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
+        self.commands.base_velocity.ranges.pos_z = (-0.07, 0.07)
+
+        # terminations
+        # self.terminations.base_contact.params["sensor_cfg"].body_names = [
+        #     "base_link",
+        #     ".*_hip",
+        #     ".*_calf",
+        #     ".*_thigh",
+        # ]
+        self.terminations.terrain_out_of_bounds = None
+        self.terminations.base_contact = None
+
 
         # Print summary for verification
         print(
