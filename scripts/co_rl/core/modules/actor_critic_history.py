@@ -53,13 +53,26 @@ def _build_mlp(in_dim: int, hidden_dims: list[int], out_dim: int, activation: nn
     return nn.Sequential(*layers)
 
 
-def _build_mlp_str(in_dim: int, hidden_dims: list[int], out_dim: int, act_name: str) -> nn.Sequential:
-    """Convenience wrapper that accepts an activation name string."""
+def _build_mlp_str(
+    in_dim: int,
+    hidden_dims: list[int],
+    out_dim: int,
+    act_name: str,
+    use_layer_norm: bool = False,
+) -> nn.Sequential:
+    """Convenience wrapper that accepts an activation name string.
+
+    When ``use_layer_norm=True`` each hidden layer becomes:
+        Linear -> LayerNorm -> Activation
+    The final output layer has no norm or activation.
+    """
     layers: list[nn.Module] = []
     dims = [in_dim] + hidden_dims + [out_dim]
     for i in range(len(dims) - 1):
         layers.append(nn.Linear(dims[i], dims[i + 1]))
         if i < len(dims) - 2:          # no activation after the last linear layer
+            if use_layer_norm:
+                layers.append(nn.LayerNorm(dims[i + 1]))
             layers.append(_get_activation(act_name))
     return nn.Sequential(*layers)
 
@@ -114,6 +127,7 @@ class ActorCriticHistoryEncoder(nn.Module):
         critic_hidden_dims: list[int] | None = None,
         activation: str = "elu",
         init_noise_std: float = 1.0,
+        use_layer_norm: bool = False,
         **kwargs,
     ):
         if kwargs:
@@ -134,6 +148,7 @@ class ActorCriticHistoryEncoder(nn.Module):
         self.history_len = history_len
         self.latent_dim = latent_dim
         self.history_flat_dim = history_len * obs_dim     # e.g. 10 * 33 = 330
+        self.use_layer_norm = use_layer_norm
 
         expected_num_obs = obs_dim + self.history_flat_dim  # e.g. 363
         if num_actor_obs != expected_num_obs:
@@ -147,7 +162,7 @@ class ActorCriticHistoryEncoder(nn.Module):
 
         # ---- history encoder: [history_len * obs_dim] -> [latent_dim] ----
         self.history_encoder = _build_mlp_str(
-            self.history_flat_dim, history_encoder_hidden_dims, latent_dim, activation
+            self.history_flat_dim, history_encoder_hidden_dims, latent_dim, activation, use_layer_norm
         )
 
         actor_in = obs_dim + latent_dim    # e.g. 33 + 32 = 65
@@ -158,17 +173,17 @@ class ActorCriticHistoryEncoder(nn.Module):
         if critic_history_flat_dim != self.history_flat_dim:
             self._critic_history_flat_dim = critic_history_flat_dim
             self.critic_history_encoder = _build_mlp_str(
-                critic_history_flat_dim, history_encoder_hidden_dims, latent_dim, activation
+                critic_history_flat_dim, history_encoder_hidden_dims, latent_dim, activation, use_layer_norm
             )
         else:
             self._critic_history_flat_dim = self.history_flat_dim
             self.critic_history_encoder = self.history_encoder   # shared encoder
 
         # ---- actor: [obs_dim + latent_dim] -> [num_actions] ----
-        self.actor = _build_mlp_str(actor_in, actor_hidden_dims, num_actions, activation)
+        self.actor = _build_mlp_str(actor_in, actor_hidden_dims, num_actions, activation, use_layer_norm)
 
         # ---- critic: [obs_dim + latent_dim] -> [1] ----
-        self.critic = _build_mlp_str(critic_in, critic_hidden_dims, 1, activation)
+        self.critic = _build_mlp_str(critic_in, critic_hidden_dims, 1, activation, use_layer_norm)
 
         # ---- action noise (trainable std) ----
         self.std = nn.Parameter(init_noise_std * torch.ones(num_actions))

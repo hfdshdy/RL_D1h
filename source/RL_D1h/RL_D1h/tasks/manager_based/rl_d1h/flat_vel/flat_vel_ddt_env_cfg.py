@@ -188,7 +188,7 @@ class DdtActionsCfg:
     fl_wheel_vel = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=["FL_foot_joint"],
-        scale=10.0,
+        scale=0.5,
         use_default_offset=False,
         preserve_order=True,
     )
@@ -211,7 +211,7 @@ class DdtActionsCfg:
     fr_wheel_vel = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=["FR_foot_joint"],
-        scale=10.0,
+        scale=0.5,
         use_default_offset=False,
         preserve_order=True,
     )
