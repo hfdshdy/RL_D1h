@@ -1,0 +1,45 @@
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+	modified:   source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/README.md b/README.md
+index d3e1ddf..e4ca816 100644
+--- a/README.md
++++ b/README.md
+@@ -19,10 +19,10 @@ python scripts/co_rl/ddt_train.py \
+   --video \
+   --video_length 200 \
+   --video_interval 5000 \
+-  --max_iterations 500 \
++  --max_iterations 1000 \
+   --resume True \
+-  --load_run 2026-05-14_17-47-32 \
+-  --checkpoint model_5000.pt 
++  --load_run 2026-05-14_20-12-49 \
++  --checkpoint model_6997.pt 
+ 
+ 
+ 
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
+index f2c51a2..2e1e924 100644
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
++++ b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/velocity_env_cfg.py
+@@ -611,7 +611,7 @@ class LocomotionVelocityFlatEnvCfg(ManagerBasedRLEnvCfg):
+         """Post initialization."""
+         # general settings
+         self.decimation = 4
+-        self.episode_length_s = 20.0
++        self.episode_length_s = 30.0
+         # simulation settings
+         self.sim.dt = 0.005
+         self.sim.disable_contact_processing = True

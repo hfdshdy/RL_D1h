@@ -611,7 +611,7 @@ class LocomotionVelocityFlatEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 4
-        self.episode_length_s = 20.0
+        self.episode_length_s = 30.0
         # simulation settings
         self.sim.dt = 0.005
         self.sim.disable_contact_processing = True
