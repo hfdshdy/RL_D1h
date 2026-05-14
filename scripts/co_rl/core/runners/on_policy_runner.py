@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter as TensorboardSummaryWriter
 from scripts import co_rl
 from scripts.co_rl.core.algorithms import PPO
 from scripts.co_rl.core.env import VecEnv
-from scripts.co_rl.core.modules import ActorCritic, ActorCriticRecurrent, EmpiricalNormalization
+from scripts.co_rl.core.modules import ActorCritic, ActorCriticHistoryEncoder, ActorCriticRecurrent, EmpiricalNormalization
 from scripts.co_rl.core.utils import store_code_state
 
 

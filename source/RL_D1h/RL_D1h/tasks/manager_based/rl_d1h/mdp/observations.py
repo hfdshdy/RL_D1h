@@ -93,3 +93,87 @@ def joint_vel_leg_gear(
 ) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     return asset.data.joint_vel[:, asset_cfg.joint_ids] * gear_ratio
+
+
+# ---------------------------------------------------------------------------
+# DDT-compatible observation functions
+#
+# These functions produce observations whose order, scale and meaning exactly
+# match the ddt_ros2_control rl_controller interface defined in
+# controller/rl_controller/config/d1h/controllers.yaml (rl_flat policy).
+#
+# Single-frame observation layout (33 dims):
+#   [ang_vel ×3 | gravity ×3 | commands ×3 | dof_pos ×8 | dof_vel ×8 | last_actions ×8]
+#
+# DDT joint order:
+#   [FL_hip, FL_thigh, FL_calf, FL_foot, FR_hip, FR_thigh, FR_calf, FR_foot]
+# ---------------------------------------------------------------------------
+
+# Canonical DDT joint order used when building SceneEntityCfg in the env config.
+DDT_JOINT_NAMES = [
+    "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint", "FL_foot_joint",
+    "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint", "FR_foot_joint",
+]
+
+# Indices of wheel joints within the DDT-ordered joint list (FL_foot=3, FR_foot=7)
+_DDT_WHEEL_LOCAL_IDX = [3, 7]
+
+
+def ddt_dof_pos(
+    env: ManagerBasedEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Joint positions (relative to default) in DDT joint order.
+
+    - Joint positions are subtracted from the robot's default joint positions
+      (set via ``init_state.joint_pos`` in the ArticulationCfg).
+    - Wheel joint positions (indices 3 and 7 in DDT order) are zeroed because
+      continuous rotation makes the absolute angle meaningless for the policy.
+    - Scale = 1.0 (matching ddt_ros2_control ``dof_pos_scale: 1.0``).
+
+    The asset_cfg must specify joint_names in DDT order, e.g.::
+
+        SceneEntityCfg("robot", joint_names=DDT_JOINT_NAMES)
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]            # [B, 8] DDT order
+    default_pos = asset.data.default_joint_pos[:, asset_cfg.joint_ids]  # [B, 8]
+    result = joint_pos - default_pos
+    # Zero wheel joints (no meaningful position signal for velocity wheels)
+    result[:, _DDT_WHEEL_LOCAL_IDX[0]] = 0.0
+    result[:, _DDT_WHEEL_LOCAL_IDX[1]] = 0.0
+    return result
+
+
+def ddt_dof_vel(
+    env: ManagerBasedEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Joint velocities in DDT joint order.
+
+    Apply ``scale=0.05`` in the ObsTerm to match ddt_ros2_control
+    ``dof_vel_scale: 0.05``.
+    The asset_cfg must specify joint_names in DDT order.
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+    return asset.data.joint_vel[:, asset_cfg.joint_ids]                 # [B, 8] DDT order
+
+
+def ddt_velocity_commands(
+    env: "ManagerBasedRLEnv",
+    command_name: str,
+    scale: tuple[float, float, float] = (2.0, 2.0, 0.25),
+) -> torch.Tensor:
+    """Velocity commands [lin_vel_x, lin_vel_y, ang_vel_z] with DDT scales.
+
+    Returns exactly 3 dimensions (the pos_z component of the command is
+    intentionally dropped here; it is used only by reward functions).
+
+    Default scales match ddt_ros2_control
+    ``commands_scale: [2.0, 2.0, 0.25]``.
+    """
+    cmd = env.command_manager.get_command(command_name)                 # [B, 4]
+    lin_vel_x = cmd[:, 0:1] * scale[0]
+    lin_vel_y = cmd[:, 1:2] * scale[1]
+    ang_vel_z = cmd[:, 2:3] * scale[2]
+    return torch.cat([lin_vel_x, lin_vel_y, ang_vel_z], dim=-1)        # [B, 3]

@@ -4,6 +4,27 @@ from .. import agents
 
 
 gym.register(
+	id="Isaac-Velocity-Flat-D1h-DDT-v0",
+	entry_point="isaaclab.envs:ManagerBasedRLEnv",
+	disable_env_checker=True,
+	kwargs={
+		"env_cfg_entry_point": f"{__name__}.flat_vel_ddt_env_cfg:D1hDdtFlatEnvCfg",
+		"co_rl_ddt_cfg_entry_point": f"{agents.__name__}.co_rl_ddt_ppo_cfg:CoRlDdtPPORunnerCfg",
+	},
+)
+
+gym.register(
+	id="Isaac-Velocity-Flat-D1h-DDT-Play-v0",
+	entry_point="isaaclab.envs:ManagerBasedRLEnv",
+	disable_env_checker=True,
+	kwargs={
+		"env_cfg_entry_point": f"{__name__}.flat_vel_ddt_env_cfg:D1hDdtFlatEnvCfg_PLAY",
+		"co_rl_ddt_cfg_entry_point": f"{agents.__name__}.co_rl_ddt_ppo_cfg:CoRlDdtPPORunnerCfg",
+	},
+)
+
+
+gym.register(
 	id="Isaac-Velocity-Flat-D1h-v0",
 	entry_point="isaaclab.envs:ManagerBasedRLEnv",
 	disable_env_checker=True,
