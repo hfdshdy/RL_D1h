@@ -49,7 +49,8 @@ class DdtHistoryVecEnvWrapper:
         self.device: torch.device = self._base.device
         self.max_episode_length: int = self._base.max_episode_length
 
-        # History buffer: newest history at index 0, oldest at index history_len-1
+        # History buffer: oldest frame at index 0, newest frame at index history_len-1  [oldest ... newest]
+        # Matches DDT FSMState_RL obs_history_vec_ layout
         self._history: torch.Tensor = torch.zeros(
             self.num_envs, history_len, obs_dim, device=self.device
         )
@@ -71,20 +72,23 @@ class DdtHistoryVecEnvWrapper:
         history_flat = self._history.reshape(self.num_envs, -1)        # [N, history_len*obs_dim]
         return torch.cat([current_obs, history_flat], dim=-1)           # [N, combined_dim]
 
-    def _push_to_history(self, obs: torch.Tensor, reset_mask: torch.Tensor | None = None):
-        """Shift buffer right and insert obs as the newest entry (index 0).
+    def _push_to_history(self, obs: torch.Tensor, new_obs: torch.Tensor | None = None, reset_mask: torch.Tensor | None = None):
+        """Shift buffer left and insert obs as the newest entry (index -1).
+
+        History layout: [oldest ... newest], matching DDT obs_history_vec_.
 
         For environments that just reset (reset_mask=True), the buffer is
-        zeroed AFTER inserting so that they start their new episode with
-        blank history.
+        filled with the first observation of the new episode (new_obs),
+        matching DDT FSMState_RL::enter() which fills all history with current obs.
         """
-        # Shift older entries toward higher indices
-        self._history[:, 1:, :] = self._history[:, :-1, :].clone()
-        # Insert the obs that was current BEFORE this step
-        self._history[:, 0, :] = obs
-        # Zero-out history for envs that terminated this step
-        if reset_mask is not None and reset_mask.any():
-            self._history[reset_mask] = 0.0
+        # Shift older entries toward lower indices (remove oldest at index 0)
+        self._history[:, :-1, :] = self._history[:, 1:, :].clone()
+        # Insert the obs at the END (newest at last index)
+        self._history[:, -1, :] = obs
+        # For reset envs, fill all history slots with the first obs of the new episode
+        if reset_mask is not None and reset_mask.any() and new_obs is not None:
+            fill = new_obs[reset_mask].unsqueeze(1).expand(-1, self.history_len, -1).clone()
+            self._history[reset_mask] = fill
 
     # ------------------------------------------------------------------
     # VecEnv API (compatible with co-rl / rsl-rl OnPolicyRunner)
@@ -116,8 +120,12 @@ class DdtHistoryVecEnvWrapper:
         """Return combined (current || history) obs and extras dict.
 
         Called once at the beginning of training by the runner.
+        Initializes history with current_obs repeated history_len times,
+        matching DDT FSMState_RL::enter() behaviour.
         """
         current_obs, extras = self._base.get_observations()     # [N, obs_dim]
+        # Fill all history slots with current_obs (like DDT enter())
+        self._history = current_obs.unsqueeze(1).expand(-1, self.history_len, -1).clone()
         self._last_obs = current_obs.clone()
 
         combined = self._combine(current_obs)                   # [N, combined_dim]
@@ -141,7 +149,7 @@ class DdtHistoryVecEnvWrapper:
         # Update history with the obs that was current BEFORE this step
         reset_mask = dones.bool()
         if self._last_obs is not None:
-            self._push_to_history(self._last_obs, reset_mask=reset_mask)
+            self._push_to_history(self._last_obs, new_obs=new_obs_raw, reset_mask=reset_mask)
 
         # Cache the new obs for the next call
         self._last_obs = new_obs_raw.clone()
@@ -151,10 +159,11 @@ class DdtHistoryVecEnvWrapper:
         return combined, rewards, dones, infos
 
     def reset(self) -> tuple[torch.Tensor, dict]:
-        """Reset all environments and zero the history buffer."""
-        self._history.zero_()
-        self._last_obs = None
+        """Reset all environments and initialize history with first observation."""
         obs_raw, extras = self._base.reset()
+        # Fill history with initial obs (like DDT enter())
+        self._history = obs_raw.unsqueeze(1).expand(-1, self.history_len, -1).clone()
+        self._last_obs = obs_raw.clone()
         combined = self._combine(obs_raw)
         extras = self._augment_extras(extras, combined)
         return combined, extras

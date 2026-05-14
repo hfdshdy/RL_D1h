@@ -191,16 +191,24 @@ class ActorCriticHistoryEncoder(nn.Module):
     # ------------------------------------------------------------------
 
     def _actor_encode(self, observations: torch.Tensor) -> torch.Tensor:
-        """Split flat obs and run history encoder -> actor input."""
+        """Split flat obs, shift history left + append current, encode -> actor input."""
         current_obs = observations[:, : self.obs_dim]                       # [B, obs_dim]
         history_flat = observations[:, self.obs_dim:]                       # [B, history_flat_dim]
-        latent = self.history_encoder(history_flat)                         # [B, latent_dim]
+        # Shift history left and append current obs at end: [oldest..prev] -> [oldest+1..prev, current]
+        history = history_flat.reshape(-1, self.history_len, self.obs_dim)  # [B, history_len, obs_dim]
+        new_history = torch.cat([history[:, 1:, :], current_obs.unsqueeze(1)], dim=1)  # [B, history_len, obs_dim]
+        new_history_flat = new_history.reshape(-1, self.history_flat_dim)   # [B, history_flat_dim]
+        latent = self.history_encoder(new_history_flat)                     # [B, latent_dim]
         return torch.cat([current_obs, latent], dim=-1)                     # [B, obs_dim + latent_dim]
 
     def _critic_encode(self, observations: torch.Tensor) -> torch.Tensor:
         current_obs = observations[:, : self.obs_dim]
         history_flat = observations[:, self.obs_dim:]
-        latent = self.critic_history_encoder(history_flat)
+        critic_history_len = self._critic_history_flat_dim // self.obs_dim
+        history = history_flat.reshape(-1, critic_history_len, self.obs_dim)
+        new_history = torch.cat([history[:, 1:, :], current_obs.unsqueeze(1)], dim=1)
+        new_history_flat = new_history.reshape(-1, self._critic_history_flat_dim)
+        latent = self.critic_history_encoder(new_history_flat)
         return torch.cat([current_obs, latent], dim=-1)
 
     # ------------------------------------------------------------------
@@ -288,9 +296,10 @@ class DdtOnnxWrapper(nn.Module):
         history_obs: torch.Tensor,
     ) -> torch.Tensor:
         # current_obs: [B, obs_dim]
-        # history_obs: [B, history_len, obs_dim]
-        B = current_obs.shape[0]
-        history_flat = history_obs.reshape(B, -1)                           # [B, history_len * obs_dim]
+        # history_obs: [B, history_len, obs_dim]  -- history BEFORE current obs (oldest at index 0)
+        # Shift history left and append current obs at end (matches DDT obs_history_vec_ update logic)
+        new_history = torch.cat([history_obs[:, 1:, :], current_obs.unsqueeze(1)], dim=1)  # [B, history_len, obs_dim]
+        history_flat = new_history.reshape(current_obs.shape[0], -1)       # [B, history_len * obs_dim]
         latent = self.history_encoder(history_flat)                         # [B, latent_dim]
         actor_input = torch.cat([current_obs, latent], dim=-1)              # [B, obs_dim + latent_dim]
         return self.actor(actor_input)                                      # [B, num_actions]
@@ -335,11 +344,8 @@ def export_ddt_policy_as_onnx(
             input_names=["nn_input0", "nn_input1"],
             output_names=["nn_output"],
             opset_version=11,
-            dynamic_axes={
-                "nn_input0": {0: "batch_size"},
-                "nn_input1": {0: "batch_size"},
-                "nn_output": {0: "batch_size"},
-            },
+            # Fixed shapes: nn_input0=[1,obs_dim], nn_input1=[1,history_len,obs_dim], nn_output=[1,num_actions]
+            # No dynamic_axes — ddt_ros2_control onnx_inferrer.cpp validates size via shape product
         )
 
     print(f"[DDT ONNX export] Saved to: {path}")
