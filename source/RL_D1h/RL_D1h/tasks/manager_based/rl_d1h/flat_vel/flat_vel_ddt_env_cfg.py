@@ -381,7 +381,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         )
 
         # ---- policy frequency: 100 Hz ----
-        # sim.dt = 0.005 s, decimation = 2  →  policy_dt = 0.01 s = 100 Hz
+        # sim.dt = 0.0025 s, decimation = 4  →  policy_dt = 0.01 s = 100 Hz
         self.decimation = 4
 
         # ---- disable all height/mask sensors (not needed for flat terrain) ----
