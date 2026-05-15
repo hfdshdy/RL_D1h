@@ -302,7 +302,7 @@ class DdtRewardsCfg:
         weight=2.0,
         params={
             "temperature": 35.0,
-            "default_height": 0.45,
+            "default_height": 0.40,
             "asset_cfg": SceneEntityCfg("robot"),
             "sensor_cfg": None,
         },
@@ -347,16 +347,16 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         # Override init_state to match DDT default_joint_angles
         # DDT: [0.0, 0.8, -1.5, 0.0, 0.0, 0.8, -1.5, 0.0]
         self.scene.robot.init_state.joint_pos = {
-            "FL_hip_joint":   0.0,
-            "FL_thigh_joint": 0.8,
-            "FL_calf_joint":  -1.5,
+            "FL_hip_joint":   0.2,
+            "FL_thigh_joint": 1.3,
+            "FL_calf_joint":  -2.75,
             "FL_foot_joint":  0.0,
-            "FR_hip_joint":   0.0,
-            "FR_thigh_joint": 0.8,
-            "FR_calf_joint":  -1.5,
+            "FR_hip_joint":   -0.2,
+            "FR_thigh_joint": 1.3,
+            "FR_calf_joint":  -2.75,
             "FR_foot_joint":  0.0,
         }
-        self.scene.robot.init_state.pos = (0.0, 0.0, 0.55)
+        self.scene.robot.init_state.pos = (0.0, 0.0, 0.17)
 
         # Override leg actuator damping to match DDT kd=1.2
         self.scene.robot.actuators["legs"] = ImplicitActuatorCfg(
@@ -377,7 +377,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
             effort_limit=20.0,           # matches DDT torque_limit for wheels
             velocity_limit=12.5,
             stiffness=0.0,
-            damping=1.0,
+            damping=0.6,
         )
 
         # ---- policy frequency: 100 Hz ----
@@ -417,7 +417,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_y = (-0.1, 0.1)
         self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.08, 0.08)
+        self.commands.base_velocity.ranges.pos_z = (-0.05, 0.05)
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [

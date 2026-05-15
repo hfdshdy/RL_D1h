@@ -144,7 +144,7 @@ class CommandsCfg:
     base_velocity = mdp.UniformVelocityWithZCommandCfg(
         asset_name="robot",
         resampling_time_range=(6.0, 8.0),
-        rel_standing_envs=0.01,    # 表示大约 1% 的环境会被设成站立命令
+        rel_standing_envs=0.08,    # 表示大约 8% 的环境会被设成站立命令
         rel_heading_envs=0.0,
         heading_command=False,
         debug_vis=True,   #  表示把 command 可视化出来
