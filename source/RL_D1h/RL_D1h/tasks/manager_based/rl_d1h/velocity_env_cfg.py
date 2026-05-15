@@ -553,7 +553,7 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
         self.decimation = 4
         self.episode_length_s = 30.0
         # simulation settings
-        self.sim.dt = 0.005
+        self.sim.dt = 0.0025
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
 
@@ -613,7 +613,7 @@ class LocomotionVelocityFlatEnvCfg(ManagerBasedRLEnvCfg):
         self.decimation = 4
         self.episode_length_s = 30.0
         # simulation settings
-        self.sim.dt = 0.005
+        self.sim.dt = 0.0025
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         
