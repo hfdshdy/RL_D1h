@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv
 
 
+D1H_TRANSUP_JOINT_OFFSETS = (0.2, 0.5, -1.25, 0.0, -0.2, 0.5, -1.25, 0.0)
+
+
 def randomize_com_positions(
     env: ManagerBasedEnv,
     env_ids: torch.Tensor | None,
@@ -45,6 +48,34 @@ def randomize_com_positions(
         com_offsets[env_ids[:, None], body_ids, dim_idx] = randomized_offset[env_ids[:, None], body_ids]
 
     asset.root_physx_view.set_coms(com_offsets, env_ids)
+
+
+def reset_joints_by_fixed_offset(
+    env: ManagerBasedEnv,
+    env_ids: torch.Tensor,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    joint_pos: tuple[float, ...] = D1H_TRANSUP_JOINT_OFFSETS,
+    joint_vel: float = 0.0,
+):
+    """Reset selected joints to default pose plus a fixed per-joint offset."""
+    asset: Articulation = env.scene[asset_cfg.name]
+
+    if asset_cfg.joint_ids != slice(None):
+        iter_env_ids = env_ids[:, None]
+    else:
+        iter_env_ids = env_ids
+
+    joint_state = asset.data.default_joint_pos[iter_env_ids, asset_cfg.joint_ids].clone()
+    joint_state += joint_state.new_tensor(joint_pos)
+
+    joint_pos_limits = asset.data.soft_joint_pos_limits[iter_env_ids, asset_cfg.joint_ids]
+    joint_state = joint_state.clamp_(joint_pos_limits[..., 0], joint_pos_limits[..., 1])
+
+    joint_velocity = torch.full_like(joint_state, joint_vel)
+    joint_vel_limits = asset.data.soft_joint_vel_limits[iter_env_ids, asset_cfg.joint_ids]
+    joint_velocity = joint_velocity.clamp_(-joint_vel_limits, joint_vel_limits)
+
+    asset.write_joint_state_to_sim(joint_state, joint_velocity, joint_ids=asset_cfg.joint_ids, env_ids=env_ids)
 
 
 def _randomize_prop_by_op(

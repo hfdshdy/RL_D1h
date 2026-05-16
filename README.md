@@ -8,8 +8,6 @@ tensorboard \
 
 
 
-python scripts/co_rl/train.py   --task Isaac-Velocity-Flat-D1h-v0   --algo ppo   --headless   --enable_cameras   --num_envs 2048   --video   --video_length 200   --video_interval 5000   --num_policy_stacks 2   --num_critic_stacks 2
-
 训练ddt-flat
 python scripts/co_rl/ddt_train.py \
   --task Isaac-Velocity-Flat-D1h-DDT-v0 \
@@ -19,10 +17,10 @@ python scripts/co_rl/ddt_train.py \
   --video \
   --video_length 200 \
   --video_interval 5000 \
-  --max_iterations 1000 \
+  --max_iterations 1500 \
   --resume True \
-  --load_run 2026-05-14_20-12-49 \
-  --checkpoint model_6997.pt 
+  --load_run 2026-05-14_20-27-46 \
+  --checkpoint model_7950.pt 
 
 
 

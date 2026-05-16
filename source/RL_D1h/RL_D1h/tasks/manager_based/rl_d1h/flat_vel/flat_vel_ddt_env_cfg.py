@@ -48,6 +48,7 @@ import math
 
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
+from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
@@ -242,17 +243,17 @@ class DdtRewardsCfg:
     # --- regularisation ---
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_link_l2, weight=-1.0)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_link_l2, weight=-0.05)
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0)
+    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0) #惩罚机身不水平
 
     # --- joint limits & tracking ---
     joint_deviation_hip = RewTerm(
-        func=mdp.joint_deviation_zero_l1,
-        weight=-2.0,
+        func=mdp.joint_deviation_l1,
+        weight=-0.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint"])},
     )
     joint_deviation_calf = RewTerm(
-        func=mdp.joint_deviation_zero_l1,
-        weight=-1.5,
+        func=mdp.joint_deviation_l1,
+        weight=-0.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_calf_joint"])},
     )
     dof_pos_limits_hip = RewTerm(
@@ -299,18 +300,18 @@ class DdtRewardsCfg:
     # --- height tracking ---
     base_height = RewTerm(
         func=mdp.track_pos_z_rel_exp,
-        weight=2.0,
+        weight=4,
         params={
             "temperature": 35.0,
-            "default_height": 0.40,
+            "default_height": 0.45,
             "asset_cfg": SceneEntityCfg("robot"),
             "sensor_cfg": None,
         },
     )
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-5)
-    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
+    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-0.0005)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.0005)
 
 
 # ---------------------------------------------------------------------------
@@ -347,13 +348,13 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         # Override init_state to match DDT default_joint_angles
         # DDT: [0.0, 0.8, -1.5, 0.0, 0.0, 0.8, -1.5, 0.0]
         self.scene.robot.init_state.joint_pos = {
-            "FL_hip_joint":   0.2,
-            "FL_thigh_joint": 1.3,
-            "FL_calf_joint":  -2.75,
+            "FL_hip_joint":   0.0,
+            "FL_thigh_joint": 0.8,
+            "FL_calf_joint":  -1.5,
             "FL_foot_joint":  0.0,
-            "FR_hip_joint":   -0.2,
-            "FR_thigh_joint": 1.3,
-            "FR_calf_joint":  -2.75,
+            "FR_hip_joint":   0.0,
+            "FR_thigh_joint": 0.8,
+            "FR_calf_joint":  -1.5,
             "FR_foot_joint":  0.0,
         }
         self.scene.robot.init_state.pos = (0.0, 0.0, 0.17)
@@ -399,7 +400,19 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.curriculum.terrain_levels = None
 
         # ---- events ----
-        self.events.reset_robot_joints.params["position_range"] = (-0.15, 0.15)
+        self.events.reset_robot_joints = EventTerm(
+            func=mdp.reset_joints_by_fixed_offset,
+            mode="reset",
+            params={
+                "asset_cfg": SceneEntityCfg(
+                    "robot",
+                    joint_names=list(DDT_JOINT_NAMES),
+                    preserve_order=True,
+                ),
+                "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
+                "joint_vel": 0.0,
+            },
+        )
         self.events.push_robot.interval_range_s = (10.0, 15.0)
         self.events.push_robot.params = {
             "velocity_range": {"x": (-0.1, 0.05), "y": (-0.01, 0.01), "z": (-0.01, 0.01)},
@@ -413,18 +426,18 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 0.5)
-        self.commands.base_velocity.ranges.lin_vel_y = (-0.1, 0.1)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.05, 0.05)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.02, 0.02)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.05, 0.05)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.05, 0.05)
+        self.commands.base_velocity.ranges.pos_z = (-0.02, 0.02)
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = [
             "base_link",
-            ".*_hip",
-            ".*_calf",
-            ".*_thigh",
+            # ".*_hip",
+            # ".*_calf",
+            # ".*_thigh",
         ]
         self.terminations.terrain_out_of_bounds = None
         # self.terminations.base_contact = None
