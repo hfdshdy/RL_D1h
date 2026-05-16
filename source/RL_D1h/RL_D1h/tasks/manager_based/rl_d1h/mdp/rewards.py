@@ -272,6 +272,22 @@ def safe_landing_motion(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> t
 
     return force_minimization_reward
 
+
+def undesired_contacts_after_time(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    threshold: float,
+    start_time_s: float,
+) -> torch.Tensor:
+    """Penalize undesired contacts only after a configured elapsed episode time."""
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w_history
+    is_contact = torch.max(torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1), dim=1)[0] > threshold
+    contact_count = torch.sum(is_contact, dim=1)
+
+    elapsed_time = env.episode_length_buf * env.step_dt
+    return contact_count * (elapsed_time >= start_time_s).to(contact_count.dtype)
+
 def feet_air_time_positive_biped(env: ManagerBasedRLEnv, command_name: str, threshold: float, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     """Reward long steps taken by the feet for bipeds.
 

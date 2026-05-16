@@ -53,6 +53,7 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
+from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
@@ -248,12 +249,12 @@ class DdtRewardsCfg:
     # --- joint limits & tracking ---
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.5,
+        weight=-2.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint"])},
     )
     joint_deviation_calf = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.5,
+        weight=-2.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_calf_joint"])},
     )
     dof_pos_limits_hip = RewTerm(
@@ -271,14 +272,26 @@ class DdtRewardsCfg:
         weight=-1.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_thigh_joint")},
     )
-    undesired_contacts = RewTerm(
-        func=mdp.undesired_contacts,
-        weight=-0.5,
+    base_contact_soft = RewTerm(
+        func=mdp.undesired_contacts_after_time,
+        weight=-5.0,
         params={
             "sensor_cfg": SceneEntityCfg(
-                "contact_forces", body_names=["base_link", ".*_thigh", ".*_calf", ".*_hip"]
+                "contact_forces", body_names=["base_link"]
             ),
-            "threshold": 1.0,
+            "threshold": 20.0,
+            "start_time_s": 0.5,
+        },
+    )
+    leg_contact_soft = RewTerm(
+        func=mdp.undesired_contacts_after_time,
+        weight=-4.0,
+        params={
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces", body_names=[".*_thigh", ".*_calf", ".*_hip"]
+            ),
+            "threshold": 20.0,
+            "start_time_s": 1.5,
         },
     )
     joint_applied_torque_limits = RewTerm(
@@ -300,9 +313,9 @@ class DdtRewardsCfg:
     # --- height tracking ---
     base_height = RewTerm(
         func=mdp.track_pos_z_rel_exp,
-        weight=4,
+        weight=5.0,
         params={
-            "temperature": 35.0,
+            "temperature": 30.0,
             "default_height": 0.45,
             "asset_cfg": SceneEntityCfg("robot"),
             "sensor_cfg": None,
@@ -310,7 +323,7 @@ class DdtRewardsCfg:
     )
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-5)
-    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-0.0005)
+    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.0005)
 
 
@@ -426,21 +439,28 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.05, 0.05)
-        self.commands.base_velocity.ranges.lin_vel_y = (-0.02, 0.02)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.05, 0.05)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.02, 0.02)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.01, 0.01)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.02, 0.02)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.02, 0.02)
+        self.commands.base_velocity.ranges.pos_z = (-0.01, 0.01)
 
         # terminations
-        self.terminations.base_contact.params["sensor_cfg"].body_names = [
-            "base_link",
-            # ".*_hip",
-            # ".*_calf",
-            # ".*_thigh",
-        ]
         self.terminations.terrain_out_of_bounds = None
-        # self.terminations.base_contact = None
+        self.terminations.base_contact = DoneTerm(
+            func=mdp.illegal_contact_after_time,
+            params={
+                "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[ "base_link",
+                 ".*_hip",
+                 ".*_calf", 
+                 ".*_thigh",
+                 ]),
+                "threshold": 100.0,
+                "start_time_s": 0.5,
+            },
+        )
+
+        
 
 
         # Print summary for verification

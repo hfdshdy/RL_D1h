@@ -30,3 +30,20 @@ def terrain_out_of_bounds(
     x_out = torch.abs(asset.data.root_pos_w[:, 0]) > 0.5 * map_width - distance_buffer
     y_out = torch.abs(asset.data.root_pos_w[:, 1]) > 0.5 * map_height - distance_buffer
     return torch.logical_or(x_out, y_out)
+
+
+def illegal_contact_after_time(
+    env: ManagerBasedRLEnv,
+    threshold: float,
+    start_time_s: float,
+    sensor_cfg: SceneEntityCfg,
+) -> torch.Tensor:
+    """Terminate on illegal contact only after a configured elapsed episode time."""
+    contact_sensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w_history
+    has_illegal_contact = torch.any(
+        torch.max(torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1), dim=1)[0] > threshold,
+        dim=1,
+    )
+    elapsed_time = env.episode_length_buf * env.step_dt
+    return torch.logical_and(has_illegal_contact, elapsed_time >= start_time_s)
