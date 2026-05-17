@@ -13,14 +13,14 @@ python scripts/co_rl/ddt_train.py \
   --task Isaac-Velocity-Flat-D1h-DDT-v0 \
   --headless \
   --enable_cameras \
-  --num_envs 2048 \
+  --num_envs 4096 \
   --video \
-  --video_length 200 \
-  --video_interval 5000 \
-  --max_iterations 1500 \
+  --video_length 300 \
+  --video_interval 3000 \
+  --max_iterations 1000 \
   --resume True \
-  --load_run 2026-05-16_17-39-42 \
-  --checkpoint model_4600.pt 
+  --load_run 2026-05-17_14-44-23 \
+  --checkpoint model_1550.pt 
 
 
 
