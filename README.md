@@ -17,10 +17,10 @@ python scripts/co_rl/ddt_train.py \
   --video \
   --video_length 300 \
   --video_interval 3000 \
-  --max_iterations 1000 \
+  --max_iterations 800 \
   --resume True \
-  --load_run 2026-05-17_14-44-23 \
-  --checkpoint model_1550.pt 
+  --load_run 2026-05-17_16-22-17 \
+  --checkpoint model_5399.pt 
 
 
 
