@@ -324,7 +324,7 @@ class DdtRewardsCfg:
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-3)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-12.5e-5)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -2.5e-51)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -2.5e-4)
 
 
 # ---------------------------------------------------------------------------
@@ -423,6 +423,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
                     preserve_order=True,
                 ),
                 "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
+                "position_range": (-0.05, 0.05),
                 "joint_vel": 0.0,
             },
         )

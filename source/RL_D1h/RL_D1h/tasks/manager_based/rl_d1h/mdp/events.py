@@ -55,9 +55,10 @@ def reset_joints_by_fixed_offset(
     env_ids: torch.Tensor,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     joint_pos: tuple[float, ...] = D1H_TRANSUP_JOINT_OFFSETS,
+    position_range: tuple[float, float] = (0.0, 0.0),
     joint_vel: float = 0.0,
 ):
-    """Reset selected joints to default pose plus a fixed per-joint offset."""
+    """Reset selected joints to default pose plus a fixed per-joint offset and optional uniform noise."""
     asset: Articulation = env.scene[asset_cfg.name]
 
     if asset_cfg.joint_ids != slice(None):
@@ -67,6 +68,7 @@ def reset_joints_by_fixed_offset(
 
     joint_state = asset.data.default_joint_pos[iter_env_ids, asset_cfg.joint_ids].clone()
     joint_state += joint_state.new_tensor(joint_pos)
+    joint_state += math_utils.sample_uniform(*position_range, joint_state.shape, joint_state.device)
 
     joint_pos_limits = asset.data.soft_joint_pos_limits[iter_env_ids, asset_cfg.joint_ids]
     joint_state = joint_state.clamp_(joint_pos_limits[..., 0], joint_pos_limits[..., 1])
