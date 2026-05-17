@@ -20,7 +20,7 @@ python scripts/co_rl/ddt_train.py \
   --max_iterations 1500 \
   --resume True \
   --load_run 2026-05-16_17-39-42 \
-  --checkpoint model_4550.pt 
+  --checkpoint model_4600.pt 
 
 
 

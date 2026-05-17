@@ -144,7 +144,7 @@ class CommandsCfg:
     base_velocity = mdp.UniformVelocityWithZCommandCfg(
         asset_name="robot",
         resampling_time_range=(6.0, 8.0),
-        rel_standing_envs=0.08,    # 表示大约 8% 的环境会被设成站立命令
+        rel_standing_envs=0.5,    # 表示大约 8% 的环境会被设成站立命令
         rel_heading_envs=0.0,
         heading_command=False,
         debug_vis=True,   #  表示把 command 可视化出来
@@ -462,14 +462,14 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "yaw": (-1.14, 1.14)},
+            "pose_range": {"x": (-0.0, 0.0), "y": (-0.0, 0.0), "yaw": (-0.0, 0.0)},
             "velocity_range": {
                 "x": (-0.1, 0.1),
                 "y": (-0.1, 0.1),
                 "z": (-0.1, 0.1),
                 "roll": (-0.1, 0.1),
                 "pitch": (-0.1, 0.1),
-                "yaw": (-0.1, 0.1),
+                "yaw": (-0.0, 0.0),
             },
         },
     )
@@ -498,7 +498,7 @@ class EventCfg:
         mode="interval",
         interval_range_s=(10.0, 15.0),
         params={
-            "velocity_range": {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.1, 0.1)},
+            "velocity_range": {"x": (-0.01, 0.01), "y": (-0.01, 0.01), "z": (-0.01, 0.01)},
         },
     )
 

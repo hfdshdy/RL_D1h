@@ -230,12 +230,12 @@ class DdtRewardsCfg:
     # --- task tracking ---
     track_lin_vel_xy_exp = RewTerm(
         func=mdp.track_lin_vel_xy_yaw_frame_exp,
-        weight=2.0,
+        weight=0.2,
         params={"command_name": "base_velocity", "std": 0.25},
     )
     track_ang_vel_z_exp = RewTerm(
         func=mdp.track_ang_vel_z_link_exp,
-        weight=1.5,
+        weight=0.0,
         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
 
@@ -324,7 +324,7 @@ class DdtRewardsCfg:
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-5)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.0005)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -2.5e-7)
 
 
 # ---------------------------------------------------------------------------
@@ -439,14 +439,15 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.02, 0.02)
-        self.commands.base_velocity.ranges.lin_vel_y = (-0.01, 0.01)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.02, 0.02)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.01, 0.01)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.00, 0.00)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.00, 0.00)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.01, 0.01)
+        self.commands.base_velocity.ranges.pos_z = (-0.00, 0.00)
 
         # terminations
         self.terminations.terrain_out_of_bounds = None
+        # self.terminations.base_contact = None
         self.terminations.base_contact = DoneTerm(
             func=mdp.illegal_contact_after_time,
             params={
@@ -456,7 +457,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
                  ".*_thigh",
                  ]),
                 "threshold": 100.0,
-                "start_time_s": 0.5,
+                "start_time_s": 0.5  ,
             },
         )
 
