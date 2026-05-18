@@ -168,8 +168,8 @@ class DdtActionsCfg:
 
     Scales match ``action_scales`` in controllers.yaml:
         hip=0.25, thigh=0.50, calf=0.50
-    Wheel velocity scale 10.0 rad/s is chosen to be comparable to DDT's
-    effective wheel speed (~8.3 rad/s per unit action with its PD controller).
+    Wheel commands are converted to effort using DDT's wheel P-mode law:
+        tau = 10.0 * 0.5 * action - 0.6 * wheel_vel
     """
 
     # --- left side ---
@@ -187,11 +187,14 @@ class DdtActionsCfg:
         use_default_offset=True,
         preserve_order=True,
     )
-    fl_wheel_vel = mdp.JointVelocityActionCfg(
+    fl_wheel_tau = mdp.DdtWheelPActionCfg(
+        class_type=mdp.DdtWheelPAction,
         asset_name="robot",
         joint_names=["FL_foot_joint"],
-        scale=0.5,
-        use_default_offset=False,
+        kp=10.0,
+        kd=0.6,
+        action_scale=0.5,
+        effort_limit=20.0,
         preserve_order=True,
     )
 
@@ -210,11 +213,14 @@ class DdtActionsCfg:
         use_default_offset=True,
         preserve_order=True,
     )
-    fr_wheel_vel = mdp.JointVelocityActionCfg(
+    fr_wheel_tau = mdp.DdtWheelPActionCfg(
+        class_type=mdp.DdtWheelPAction,
         asset_name="robot",
         joint_names=["FR_foot_joint"],
-        scale=0.5,
-        use_default_offset=False,
+        kp=10.0,
+        kd=0.6,
+        action_scale=0.5,
+        effort_limit=20.0,
         preserve_order=True,
     )
 
@@ -342,7 +348,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
     -------------------------------------
     - Policy frequency: 100 Hz (decimation=2 × sim.dt=0.005 s)
     - Leg PD: kp=40.0, kd=1.2  (matches rl_flat joint_kp/kd for legs)
-    - Wheel control: velocity-based (kp=0, kd=1.0), scale=10 rad/s
+    - Wheel control: DDT P-mode effort, tau = 5.0 * action - 0.6 * wheel_vel
     - Default joint pos: [0.0, 0.8, -1.5, 0.0, ...] (matches DDT defaults)
     """
 
@@ -385,13 +391,13 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
             damping=1.2,                 # kd matches DDT joint_kd legs
         )
 
-        # Wheel actuator: velocity control (kp=0, kd=1.0)
+        # Wheel damping is handled inside DdtWheelPAction; keep the actuator passive.
         self.scene.robot.actuators["wheels"] = ImplicitActuatorCfg(
             joint_names_expr=["FL_foot_joint", "FR_foot_joint"],
             effort_limit=20.0,           # matches DDT torque_limit for wheels
             velocity_limit=12.5,
             stiffness=0.0,
-            damping=0.6,
+            damping=0.0,
         )
 
         # ---- policy frequency: 100 Hz ----
