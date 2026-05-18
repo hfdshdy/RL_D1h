@@ -1,0 +1,57 @@
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+	modified:   source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/README.md b/README.md
+index 91929da..ca7c503 100644
+--- a/README.md
++++ b/README.md
+@@ -19,8 +19,8 @@ python scripts/co_rl/ddt_train.py \
+   --video_interval 3000 \
+   --max_iterations 1000 \
+   --resume True \
+-  --load_run 2026-05-17_21-09-03 \
+-  --checkpoint model_9997.pt 
++  --load_run 2026-05-17_21-31-54 \
++  --checkpoint model_10996.pt 
+ 
+ 
+ 
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+index 971aac0..ba2495b 100644
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
++++ b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+@@ -230,12 +230,12 @@ class DdtRewardsCfg:
+     # --- task tracking ---
+     track_lin_vel_xy_exp = RewTerm(
+         func=mdp.track_lin_vel_xy_yaw_frame_exp,
+-        weight=4.5,
++        weight=6.5,
+         params={"command_name": "base_velocity", "std": 0.25},
+     )
+     track_ang_vel_z_exp = RewTerm(
+         func=mdp.track_ang_vel_z_link_exp,
+-        weight=4.0,
++        weight=6.0,
+         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+     )
+ 
+@@ -274,7 +274,7 @@ class DdtRewardsCfg:
+     )
+     base_contact_soft = RewTerm(
+         func=mdp.undesired_contacts_after_time,
+-        weight=-5.0,
++        weight=-15.0,
+         params={
+             "sensor_cfg": SceneEntityCfg(
+                 "contact_forces", body_names=["base_link"]

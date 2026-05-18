@@ -498,14 +498,14 @@ class D1hDdtFlatEnvCfg_PLAY(D1hDdtFlatEnvCfg):
 
         # Start from standing commands to isolate get-up and balance behavior.
         self.commands.base_velocity.rel_standing_envs = 1.0
-        self.commands.base_velocity.ranges.lin_vel_x = (0.0, 0.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
         self.commands.base_velocity.ranges.pos_z = (0.0, 0.0)
 
         # Remove reset randomness so evaluation always starts from the same base state.
         self.events.reset_base.params = {
-            "pose_range": {"x": (0.0, 0.0), "y": (0.0, 0.0), "yaw": (0.0, 0.0)},
+            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-0.5, 0.5)},
             "velocity_range": {
                 "x": (0.0, 0.0),
                 "y": (0.0, 0.0),
