@@ -19,9 +19,19 @@ python scripts/co_rl/ddt_train.py \
   --video_interval 3000 \
   --max_iterations 1000 \
   --resume True \
-  --load_run 2026-05-17_21-09-03 \
-  --checkpoint model_9997.pt 
+  --load_run 2026-05-17_21-31-54 \
+  --checkpoint model_10996.pt 
 
+
+推理ddt
+python scripts/co_rl/ddt_play.py \
+  --task Isaac-Velocity-Flat-D1h-DDT-Play-v0 \
+  --headless \
+  --num_envs 6 \
+  --video \
+  --video_length 2000 \
+  --load_run 2026-05-18_09-22-43 \
+  --checkpoint model_11995.pt
 
 
 训练

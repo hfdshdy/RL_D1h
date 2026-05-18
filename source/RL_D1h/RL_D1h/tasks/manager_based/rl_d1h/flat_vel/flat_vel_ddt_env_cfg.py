@@ -230,12 +230,12 @@ class DdtRewardsCfg:
     # --- task tracking ---
     track_lin_vel_xy_exp = RewTerm(
         func=mdp.track_lin_vel_xy_yaw_frame_exp,
-        weight=4.5,
+        weight=6.5,
         params={"command_name": "base_velocity", "std": 0.25},
     )
     track_ang_vel_z_exp = RewTerm(
         func=mdp.track_ang_vel_z_link_exp,
-        weight=4.0,
+        weight=6.0,
         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
 
@@ -274,7 +274,7 @@ class DdtRewardsCfg:
     )
     base_contact_soft = RewTerm(
         func=mdp.undesired_contacts_after_time,
-        weight=-5.0,
+        weight=-15.0,
         params={
             "sensor_cfg": SceneEntityCfg(
                 "contact_forces", body_names=["base_link"]
