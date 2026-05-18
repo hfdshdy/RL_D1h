@@ -40,6 +40,12 @@ parser.add_argument("--video_length", type=int, default=200, help="Length of the
 parser.add_argument("--num_envs", type=int, default=64, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default="Isaac-Velocity-Flat-D1h-DDT-v0", help="Task name.")
 parser.add_argument("--seed", type=int, default=42, help="Seed used for the environment.")
+parser.add_argument(
+    "--action_stats_interval",
+    type=int,
+    default=50,
+    help="Print action statistics every N simulation steps. Set <= 0 to disable.",
+)
 
 cli_args.add_co_rl_args(parser)
 AppLauncher.add_app_launcher_args(parser)
@@ -132,19 +138,29 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: CoRlPolicyRunnerCfg):
     runner.load(resume_path)
 
     policy = runner.get_inference_policy(device=env.unwrapped.device)
-    obs, _ = env.get_observations()
+    obs, _ = env.reset()
 
     timestep = 0
     while simulation_app.is_running():
         with torch.inference_mode():
             actions = policy(obs)
-            clipped_actions = torch.clamp(actions, -1.0, 1.0)
-            obs, _, _, _ = env.step(clipped_actions)
+            if args_cli.action_stats_interval > 0 and timestep % args_cli.action_stats_interval == 0:
+                print(
+                    "[play action]"
+                    f" step={timestep}"
+                    f" min={actions.min().item():.4f}"
+                    f" max={actions.max().item():.4f}"
+                    f" absmax={actions.abs().max().item():.4f}"
+                    f" a0={actions[0].detach().cpu().numpy()}"
+                )
+            obs, _, _, _ = env.step(actions)
 
         if args_cli.video:
             timestep += 1
             if timestep >= args_cli.video_length:
                 break
+        else:
+            timestep += 1
 
     env.close()
 

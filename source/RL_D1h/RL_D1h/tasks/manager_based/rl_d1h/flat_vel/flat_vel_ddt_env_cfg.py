@@ -487,7 +487,31 @@ class D1hDdtFlatEnvCfg_PLAY(D1hDdtFlatEnvCfg):
         self.scene.num_envs = 16
         self.scene.env_spacing = 2.5
         self.episode_length_s = 30.0
-        # Disable domain randomisation during play
+
+        # Disable domain randomization during play.
         self.events.push_robot = None
         self.events.add_base_mass = None
         self.events.randomize_com_positions = None
+
+        # Disable policy observation corruption for evaluation.
+        self.observations.policy.enable_corruption = False
+
+        # Start from standing commands to isolate get-up and balance behavior.
+        self.commands.base_velocity.rel_standing_envs = 1.0
+        self.commands.base_velocity.ranges.lin_vel_x = (0.0, 0.0)
+        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+        self.commands.base_velocity.ranges.pos_z = (0.0, 0.0)
+
+        # Remove reset randomness so evaluation always starts from the same base state.
+        self.events.reset_base.params = {
+            "pose_range": {"x": (0.0, 0.0), "y": (0.0, 0.0), "yaw": (0.0, 0.0)},
+            "velocity_range": {
+                "x": (0.0, 0.0),
+                "y": (0.0, 0.0),
+                "z": (0.0, 0.0),
+                "roll": (0.0, 0.0),
+                "pitch": (0.0, 0.0),
+                "yaw": (0.0, 0.0),
+            },
+        }
