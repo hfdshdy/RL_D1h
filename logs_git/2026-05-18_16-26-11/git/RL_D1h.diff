@@ -1,0 +1,86 @@
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+	modified:   source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/README.md b/README.md
+index 1a96eca..bcbf1c7 100644
+--- a/README.md
++++ b/README.md
+@@ -19,17 +19,17 @@ python scripts/co_rl/ddt_train.py \
+   --video_interval 3000 \
+   --max_iterations 1000 \
+   --resume True \
+-  --load_run 2026-05-17_21-31-54 \
+-  --checkpoint model_10996.pt 
++  --load_run 2026-05-18_16-10-39 \
++  --checkpoint model_13100.pt 
+ 
+ 
+ 推理ddt
+ python scripts/co_rl/ddt_play.py \
+   --task Isaac-Velocity-Flat-D1h-DDT-Play-v0 \
+   --headless \
+-  --num_envs 6 \
++  --num_envs 10 \
+   --video \
+-  --video_length 2000 \
++  --video_length 6000 \
+   --load_run 2026-05-18_09-22-43 \
+   --checkpoint model_11995.pt
+ 
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+index 8354b9a..8255c10 100644
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
++++ b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+@@ -249,12 +249,12 @@ class DdtRewardsCfg:
+     # --- joint limits & tracking ---
+     joint_deviation_hip = RewTerm(
+         func=mdp.joint_deviation_l1,
+-        weight=-2.5,
++        weight=-4.5,
+         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint"])},
+     )
+     joint_deviation_calf = RewTerm(
+         func=mdp.joint_deviation_l1,
+-        weight=-2.5,
++        weight=-4.5,
+         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_calf_joint"])},
+     )
+     dof_pos_limits_hip = RewTerm(
+@@ -324,7 +324,7 @@ class DdtRewardsCfg:
+ 
+     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-3)
+     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-12.5e-5)
+-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -7.5e-2)
++    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-2)
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -423,7 +423,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+                     preserve_order=True,
+                 ),
+                 "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
+-                "position_range": (-0.1, 0.1),
++                "position_range": (-0.5, 0.5),
+                 "joint_vel": 0.0,
+             },
+         )
+@@ -497,7 +497,7 @@ class D1hDdtFlatEnvCfg_PLAY(D1hDdtFlatEnvCfg):
+         self.observations.policy.enable_corruption = False
+ 
+         # Start from standing commands to isolate get-up and balance behavior.
+-        self.commands.base_velocity.rel_standing_envs = 1.0
++        self.commands.base_velocity.rel_standing_envs = 0.3
+         self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 1.0)
+         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)

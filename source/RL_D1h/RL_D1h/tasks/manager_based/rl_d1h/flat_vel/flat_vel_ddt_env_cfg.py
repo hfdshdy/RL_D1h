@@ -249,12 +249,12 @@ class DdtRewardsCfg:
     # --- joint limits & tracking ---
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-2.5,
+        weight=-4.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint"])},
     )
     joint_deviation_calf = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-2.5,
+        weight=-4.5,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_calf_joint"])},
     )
     dof_pos_limits_hip = RewTerm(
@@ -324,7 +324,7 @@ class DdtRewardsCfg:
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-3)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-12.5e-5)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -7.5e-2)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-2)
 
 
 # ---------------------------------------------------------------------------
@@ -423,7 +423,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
                     preserve_order=True,
                 ),
                 "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
-                "position_range": (-0.1, 0.1),
+                "position_range": (-0.5, 0.5),
                 "joint_vel": 0.0,
             },
         )
@@ -497,7 +497,7 @@ class D1hDdtFlatEnvCfg_PLAY(D1hDdtFlatEnvCfg):
         self.observations.policy.enable_corruption = False
 
         # Start from standing commands to isolate get-up and balance behavior.
-        self.commands.base_velocity.rel_standing_envs = 1.0
+        self.commands.base_velocity.rel_standing_envs = 0.5
         self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
