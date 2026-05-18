@@ -230,12 +230,12 @@ class DdtRewardsCfg:
     # --- task tracking ---
     track_lin_vel_xy_exp = RewTerm(
         func=mdp.track_lin_vel_xy_yaw_frame_exp,
-        weight=4.0,
+        weight=4.5,
         params={"command_name": "base_velocity", "std": 0.25},
     )
     track_ang_vel_z_exp = RewTerm(
         func=mdp.track_ang_vel_z_link_exp,
-        weight=3.5,
+        weight=4.0,
         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
 
@@ -324,7 +324,7 @@ class DdtRewardsCfg:
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-3)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-12.5e-5)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -2.5e-4)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -7.5e-2)
 
 
 # ---------------------------------------------------------------------------
@@ -423,7 +423,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
                     preserve_order=True,
                 ),
                 "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
-                "position_range": (-0.05, 0.05),
+                "position_range": (-0.1, 0.1),
                 "joint_vel": 0.0,
             },
         )
@@ -440,9 +440,9 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.9, 0.9)
+        self.commands.base_velocity.ranges.lin_vel_x = (-1.8, 1.8)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.02, 0.02)
-        self.commands.base_velocity.ranges.ang_vel_z = (-0.9, 0.9)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.8, 1.8)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
         self.commands.base_velocity.ranges.pos_z = (-0.1, 0.05)
 
