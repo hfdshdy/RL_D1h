@@ -1,0 +1,308 @@
+--- git status ---
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+	modified:   source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+	modified:   source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/__init__.py
+	deleted:    source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/actions.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/README.md b/README.md
+index ed57ffa..233597f 100644
+--- a/README.md
++++ b/README.md
+@@ -15,12 +15,12 @@ python scripts/co_rl/ddt_train.py \
+   --enable_cameras \
+   --num_envs 4096 \
+   --video \
+-  --video_length 300 \
+-  --video_interval 3000 \
++  --video_length 200 \
++  --video_interval 2000 \
+   --max_iterations 1000 \
+   --resume True \
+-  --load_run 2026-05-18_16-10-39 \
+-  --checkpoint model_13100.pt 
++  --load_run 2026-05-20_20-27-32 \
++  --checkpoint model_4800.pt 
+ 
+ 
+ 推理ddt
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+index a9fd352..761b79f 100644
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
++++ b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/flat_vel/flat_vel_ddt_env_cfg.py
+@@ -168,8 +168,9 @@ class DdtActionsCfg:
+ 
+     Scales match ``action_scales`` in controllers.yaml:
+         hip=0.25, thigh=0.50, calf=0.50
+-    Wheel commands are converted to effort using DDT's wheel P-mode law:
+-        tau = 10.0 * 0.5 * action - 0.6 * wheel_vel
++    Wheel commands are applied as relative position offsets with scale 0.5,
++    relying on the wheel actuator gains to reproduce DDT's wheel P-mode
++    behavior more closely than a direct torque term.
+     """
+ 
+     # --- left side ---
+@@ -187,14 +188,11 @@ class DdtActionsCfg:
+         use_default_offset=True,
+         preserve_order=True,
+     )
+-    fl_wheel_tau = mdp.DdtWheelPActionCfg(
+-        class_type=mdp.DdtWheelPAction,
++    fl_wheel_pos = mdp.RelativeJointPositionActionCfg(
+         asset_name="robot",
+         joint_names=["FL_foot_joint"],
+-        kp=10.0,
+-        kd=0.6,
+-        action_scale=0.5,
+-        effort_limit=20.0,
++        scale=0.5,
++        use_zero_offset=True,
+         preserve_order=True,
+     )
+ 
+@@ -213,14 +211,11 @@ class DdtActionsCfg:
+         use_default_offset=True,
+         preserve_order=True,
+     )
+-    fr_wheel_tau = mdp.DdtWheelPActionCfg(
+-        class_type=mdp.DdtWheelPAction,
++    fr_wheel_pos = mdp.RelativeJointPositionActionCfg(
+         asset_name="robot",
+         joint_names=["FR_foot_joint"],
+-        kp=10.0,
+-        kd=0.6,
+-        action_scale=0.5,
+-        effort_limit=20.0,
++        scale=0.5,
++        use_zero_offset=True,
+         preserve_order=True,
+     )
+ 
+@@ -250,7 +245,7 @@ class DdtRewardsCfg:
+     # --- regularisation ---
+     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_link_l2, weight=-1.0)
+     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_link_l2, weight=-0.05)
+-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0) #惩罚机身不水平
++    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-20.0) #惩罚机身不水平
+ 
+     # --- joint limits & tracking ---
+     joint_deviation_hip = RewTerm(
+@@ -280,7 +275,7 @@ class DdtRewardsCfg:
+     )
+     base_contact_soft = RewTerm(
+         func=mdp.undesired_contacts_after_time,
+-        weight=-15.0,
++        weight=-30.0,
+         params={
+             "sensor_cfg": SceneEntityCfg(
+                 "contact_forces", body_names=["base_link"]
+@@ -291,7 +286,7 @@ class DdtRewardsCfg:
+     )
+     leg_contact_soft = RewTerm(
+         func=mdp.undesired_contacts_after_time,
+-        weight=-4.0,
++        weight=-20.0,
+         params={
+             "sensor_cfg": SceneEntityCfg(
+                 "contact_forces", body_names=[".*_thigh", ".*_calf", ".*_hip"]
+@@ -319,7 +314,7 @@ class DdtRewardsCfg:
+     # --- height tracking ---
+     base_height = RewTerm(
+         func=mdp.track_pos_z_rel_exp,
+-        weight=7.0,
++        weight=30.0,
+         params={
+             "temperature": 30.0,
+             "default_height": 0.45,
+@@ -330,7 +325,7 @@ class DdtRewardsCfg:
+ 
+     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-3)
+     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-12.5e-5)
+-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-2)
++    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-4) #2
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -348,7 +343,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+     -------------------------------------
+     - Policy frequency: 100 Hz (decimation=2 × sim.dt=0.005 s)
+     - Leg PD: kp=40.0, kd=1.2  (matches rl_flat joint_kp/kd for legs)
+-    - Wheel control: DDT P-mode effort, tau = 5.0 * action - 0.6 * wheel_vel
++    - Wheel control: relative position action + wheel PD gains (kp=10.0, kd=0.6)
+     - Default joint pos: [0.0, 0.8, -1.5, 0.0, ...] (matches DDT defaults)
+     """
+ 
+@@ -391,13 +386,13 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+             damping=1.2,                 # kd matches DDT joint_kd legs
+         )
+ 
+-        # Wheel damping is handled inside DdtWheelPAction; keep the actuator passive.
++        # Wheel control is modeled with relative position commands and DDT-matching PD gains.
+         self.scene.robot.actuators["wheels"] = ImplicitActuatorCfg(
+-            joint_names_expr=["FL_foot_joint", "FR_foot_joint"],
++            joint_names_expr=[".*_foot_joint"],
+             effort_limit=20.0,           # matches DDT torque_limit for wheels
+             velocity_limit=12.5,
+-            stiffness=0.0,
+-            damping=0.0,
++            stiffness=10.0,
++            damping=0.6,
+         )
+ 
+         # ---- policy frequency: 100 Hz ----
+@@ -429,7 +424,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+                     preserve_order=True,
+                 ),
+                 "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
+-                "position_range": (-0.5, 0.5),
++                "position_range": (-0.7, 0.7),
+                 "joint_vel": 0.0,
+             },
+         )
+@@ -447,10 +442,10 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+ 
+         # commands
+         self.commands.base_velocity.ranges.lin_vel_x = (-1.8, 1.8)
+-        self.commands.base_velocity.ranges.lin_vel_y = (-0.02, 0.02)
++        self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
+         self.commands.base_velocity.ranges.ang_vel_z = (-1.8, 1.8)
+         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
+-        self.commands.base_velocity.ranges.pos_z = (-0.1, 0.05)
++        self.commands.base_velocity.ranges.pos_z = (-0.15, 0.05)
+ 
+         # terminations
+         self.terminations.terrain_out_of_bounds = None
+@@ -464,7 +459,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
+                  ".*_thigh",
+                  ]),
+                 "threshold": 100.0,
+-                "start_time_s": 0.5  ,
++                "start_time_s": 2.0  ,
+             },
+         )
+ 
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/__init__.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/__init__.py
+index 7bd6737..cbce773 100644
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/__init__.py
++++ b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/__init__.py
+@@ -7,7 +7,6 @@
+ 
+ from isaaclab.envs.mdp import *  # noqa: F401, F403
+ 
+-from .actions import *  # noqa: F401, F403
+ from .curriculums import *  # noqa: F401, F403
+ from .events import *  # noqa: F401, F403
+ from .observations import *  # noqa: F401, F403
+diff --git a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/actions.py b/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/actions.py
+deleted file mode 100644
+index 42f4a8e..0000000
+--- a/source/RL_D1h/RL_D1h/tasks/manager_based/rl_d1h/mdp/actions.py
++++ /dev/null
+@@ -1,97 +0,0 @@
+-# Copyright (c) 2022-2025, The Isaac Lab Project Developers.
+-# All rights reserved.
+-#
+-# SPDX-License-Identifier: BSD-3-Clause
+-
+-from __future__ import annotations
+-
+-from dataclasses import MISSING
+-from typing import TYPE_CHECKING
+-
+-import torch
+-
+-from isaaclab.assets import Articulation
+-from isaaclab.managers import ActionTerm, ActionTermCfg
+-from isaaclab.utils import configclass
+-
+-if TYPE_CHECKING:
+-    from collections.abc import Sequence
+-
+-
+-@configclass
+-class DdtWheelPActionCfg(ActionTermCfg):
+-    """DDT P-mode wheel action.
+-
+-    This reproduces ddt_ros2_control's wheel P-mode torque computation:
+-
+-        tau_wheel = wheel_kp * action_scale * action - wheel_kd * wheel_vel
+-
+-    With the default D1H rl_flat parameters, this becomes:
+-
+-        tau_wheel = 10.0 * 0.5 * action - 0.6 * wheel_vel
+-                  = 5.0 * action - 0.6 * wheel_vel
+-    """
+-
+-    class_type: type[ActionTerm] = MISSING
+-
+-    joint_names: list[str] = MISSING
+-    kp: float = 10.0
+-    kd: float = 0.6
+-    action_scale: float = 0.5
+-    effort_limit: float = 20.0
+-    preserve_order: bool = True
+-
+-    def __post_init__(self):
+-        if self.class_type is MISSING:
+-            self.class_type = DdtWheelPAction
+-
+-
+-class DdtWheelPAction(ActionTerm):
+-    """Apply wheel efforts that match DDT's P-mode wheel controller."""
+-
+-    cfg: DdtWheelPActionCfg
+-    _asset: Articulation
+-
+-    def __init__(self, cfg: DdtWheelPActionCfg, env):
+-        super().__init__(cfg, env)
+-
+-        self._joint_ids, self._joint_names = self._asset.find_joints(
+-            self.cfg.joint_names,
+-            preserve_order=self.cfg.preserve_order,
+-        )
+-
+-        self._raw_actions = torch.zeros(self.num_envs, self.action_dim, device=self.device)
+-        self._processed_actions = torch.zeros_like(self._raw_actions)
+-
+-    @property
+-    def action_dim(self) -> int:
+-        return len(self._joint_ids)
+-
+-    @property
+-    def raw_actions(self) -> torch.Tensor:
+-        return self._raw_actions
+-
+-    @property
+-    def processed_actions(self) -> torch.Tensor:
+-        return self._processed_actions
+-
+-    def process_actions(self, actions: torch.Tensor):
+-        self._raw_actions[:] = actions
+-
+-        wheel_vel = self._asset.data.joint_vel[:, self._joint_ids]
+-        torques = self.cfg.kp * self.cfg.action_scale * actions - self.cfg.kd * wheel_vel
+-        self._processed_actions[:] = torch.clamp(
+-            torques,
+-            min=-self.cfg.effort_limit,
+-            max=self.cfg.effort_limit,
+-        )
+-
+-    def apply_actions(self):
+-        self._asset.set_joint_effort_target(self._processed_actions, joint_ids=self._joint_ids)
+-
+-    def reset(self, env_ids: Sequence[int] | None = None) -> None:
+-        self._raw_actions[env_ids] = 0.0
+-        self._processed_actions[env_ids] = 0.0
+-
+-
+-DdtWheelPActionCfg.class_type = DdtWheelPAction
+\ No newline at end of file

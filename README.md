@@ -30,8 +30,8 @@ python scripts/co_rl/ddt_play.py \
   --num_envs 30 \
   --video \
   --video_length 6000 \
-  --load_run 2026-05-18_16-26-11 \
-  --checkpoint model_14099.pt
+  --load_run 2026-05-20_20-52-25 \
+  --checkpoint model_5799.pt
 
 
 训练
