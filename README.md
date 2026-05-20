@@ -15,12 +15,12 @@ python scripts/co_rl/ddt_train.py \
   --enable_cameras \
   --num_envs 4096 \
   --video \
-  --video_length 300 \
-  --video_interval 3000 \
+  --video_length 200 \
+  --video_interval 2000 \
   --max_iterations 1000 \
   --resume True \
-  --load_run 2026-05-18_16-10-39 \
-  --checkpoint model_13100.pt 
+  --load_run 2026-05-20_20-27-32 \
+  --checkpoint model_4800.pt 
 
 
 推理ddt

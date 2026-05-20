@@ -168,8 +168,9 @@ class DdtActionsCfg:
 
     Scales match ``action_scales`` in controllers.yaml:
         hip=0.25, thigh=0.50, calf=0.50
-    Wheel commands are converted to effort using DDT's wheel P-mode law:
-        tau = 10.0 * 0.5 * action - 0.6 * wheel_vel
+    Wheel commands are applied as relative position offsets with scale 0.5,
+    relying on the wheel actuator gains to reproduce DDT's wheel P-mode
+    behavior more closely than a direct torque term.
     """
 
     # --- left side ---
@@ -187,14 +188,11 @@ class DdtActionsCfg:
         use_default_offset=True,
         preserve_order=True,
     )
-    fl_wheel_tau = mdp.DdtWheelPActionCfg(
-        class_type=mdp.DdtWheelPAction,
+    fl_wheel_pos = mdp.RelativeJointPositionActionCfg(
         asset_name="robot",
         joint_names=["FL_foot_joint"],
-        kp=10.0,
-        kd=0.6,
-        action_scale=0.5,
-        effort_limit=20.0,
+        scale=0.5,
+        use_zero_offset=True,
         preserve_order=True,
     )
 
@@ -213,14 +211,11 @@ class DdtActionsCfg:
         use_default_offset=True,
         preserve_order=True,
     )
-    fr_wheel_tau = mdp.DdtWheelPActionCfg(
-        class_type=mdp.DdtWheelPAction,
+    fr_wheel_pos = mdp.RelativeJointPositionActionCfg(
         asset_name="robot",
         joint_names=["FR_foot_joint"],
-        kp=10.0,
-        kd=0.6,
-        action_scale=0.5,
-        effort_limit=20.0,
+        scale=0.5,
+        use_zero_offset=True,
         preserve_order=True,
     )
 
@@ -250,7 +245,7 @@ class DdtRewardsCfg:
     # --- regularisation ---
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_link_l2, weight=-1.0)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_link_l2, weight=-0.05)
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0) #惩罚机身不水平
+    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-20.0) #惩罚机身不水平
 
     # --- joint limits & tracking ---
     joint_deviation_hip = RewTerm(
@@ -280,7 +275,7 @@ class DdtRewardsCfg:
     )
     base_contact_soft = RewTerm(
         func=mdp.undesired_contacts_after_time,
-        weight=-15.0,
+        weight=-30.0,
         params={
             "sensor_cfg": SceneEntityCfg(
                 "contact_forces", body_names=["base_link"]
@@ -291,7 +286,7 @@ class DdtRewardsCfg:
     )
     leg_contact_soft = RewTerm(
         func=mdp.undesired_contacts_after_time,
-        weight=-4.0,
+        weight=-20.0,
         params={
             "sensor_cfg": SceneEntityCfg(
                 "contact_forces", body_names=[".*_thigh", ".*_calf", ".*_hip"]
@@ -319,7 +314,7 @@ class DdtRewardsCfg:
     # --- height tracking ---
     base_height = RewTerm(
         func=mdp.track_pos_z_rel_exp,
-        weight=7.0,
+        weight=30.0,
         params={
             "temperature": 30.0,
             "default_height": 0.45,
@@ -330,7 +325,7 @@ class DdtRewardsCfg:
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-3)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-12.5e-5)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-2)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-4) #2
 
 
 # ---------------------------------------------------------------------------
@@ -348,7 +343,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
     -------------------------------------
     - Policy frequency: 100 Hz (decimation=2 × sim.dt=0.005 s)
     - Leg PD: kp=40.0, kd=1.2  (matches rl_flat joint_kp/kd for legs)
-    - Wheel control: DDT P-mode effort, tau = 5.0 * action - 0.6 * wheel_vel
+    - Wheel control: relative position action + wheel PD gains (kp=10.0, kd=0.6)
     - Default joint pos: [0.0, 0.8, -1.5, 0.0, ...] (matches DDT defaults)
     """
 
@@ -391,13 +386,13 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
             damping=1.2,                 # kd matches DDT joint_kd legs
         )
 
-        # Wheel damping is handled inside DdtWheelPAction; keep the actuator passive.
+        # Wheel control is modeled with relative position commands and DDT-matching PD gains.
         self.scene.robot.actuators["wheels"] = ImplicitActuatorCfg(
-            joint_names_expr=["FL_foot_joint", "FR_foot_joint"],
+            joint_names_expr=[".*_foot_joint"],
             effort_limit=20.0,           # matches DDT torque_limit for wheels
             velocity_limit=12.5,
-            stiffness=0.0,
-            damping=0.0,
+            stiffness=10.0,
+            damping=0.6,
         )
 
         # ---- policy frequency: 100 Hz ----
@@ -429,7 +424,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
                     preserve_order=True,
                 ),
                 "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
-                "position_range": (-0.5, 0.5),
+                "position_range": (-0.7, 0.7),
                 "joint_vel": 0.0,
             },
         )
@@ -447,10 +442,10 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
 
         # commands
         self.commands.base_velocity.ranges.lin_vel_x = (-1.8, 1.8)
-        self.commands.base_velocity.ranges.lin_vel_y = (-0.02, 0.02)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.8, 1.8)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
-        self.commands.base_velocity.ranges.pos_z = (-0.1, 0.05)
+        self.commands.base_velocity.ranges.pos_z = (-0.15, 0.05)
 
         # terminations
         self.terminations.terrain_out_of_bounds = None
@@ -464,7 +459,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
                  ".*_thigh",
                  ]),
                 "threshold": 100.0,
-                "start_time_s": 0.5  ,
+                "start_time_s": 2.0  ,
             },
         )
 
