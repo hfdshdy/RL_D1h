@@ -231,12 +231,12 @@ class DdtRewardsCfg:
     # --- task tracking ---
     track_lin_vel_xy_exp = RewTerm(
         func=mdp.track_lin_vel_xy_yaw_frame_exp,
-        weight=6.5,
+        weight=8.5,
         params={"command_name": "base_velocity", "std": 0.25},
     )
     track_ang_vel_z_exp = RewTerm(
         func=mdp.track_ang_vel_z_link_exp,
-        weight=6.0,
+        weight=8.0,
         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
 
@@ -275,7 +275,7 @@ class DdtRewardsCfg:
     )
     base_contact_soft = RewTerm(
         func=mdp.undesired_contacts_after_time,
-        weight=-30.0,
+        weight=-20.0,
         params={
             "sensor_cfg": SceneEntityCfg(
                 "contact_forces", body_names=["base_link"]
@@ -314,9 +314,9 @@ class DdtRewardsCfg:
     # --- height tracking ---
     base_height = RewTerm(
         func=mdp.track_pos_z_rel_exp,
-        weight=30.0,
+        weight=20.0,
         params={
-            "temperature": 30.0,
+            "temperature": 35.0,
             "default_height": 0.45,
             "asset_cfg": SceneEntityCfg("robot"),
             "sensor_cfg": None,
@@ -325,7 +325,7 @@ class DdtRewardsCfg:
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-5.0e-3)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-12.5e-5)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-4) #2
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight= -35.5e-2) #2
 
 
 # ---------------------------------------------------------------------------
@@ -424,7 +424,7 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
                     preserve_order=True,
                 ),
                 "joint_pos": mdp.D1H_TRANSUP_JOINT_OFFSETS,
-                "position_range": (-0.7, 0.7),
+                "position_range": (-0.4, 0.4),
                 "joint_vel": 0.0,
             },
         )
@@ -441,9 +441,9 @@ class D1hDdtFlatEnvCfg(LocomotionVelocityFlatEnvCfg):
         self.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.8)
 
         # commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-1.8, 1.8)
+        self.commands.base_velocity.ranges.lin_vel_x = (-1.5, 1.5)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (-1.8, 1.8)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.5, 1.5)
         # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  #目标朝向
         self.commands.base_velocity.ranges.pos_z = (-0.15, 0.05)
 
